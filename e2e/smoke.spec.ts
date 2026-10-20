@@ -79,3 +79,22 @@ test('after a game, the review explains the key moments and "Try again" starts f
   await page.locator('.moment').first().getByRole('button', { name: 'Try again' }).click();
   await expect(page.locator('.turn-hint')).toHaveText('Your move', { timeout: 60_000 });
 });
+
+test('a tap still lands on the right square after the layout above the board moves', async ({ page }) => {
+  await start(page);
+  await page.getByRole('button', { name: 'Rivals' }).click();
+  await page.getByRole('button', { name: /Straw Sam/ }).click();
+  await page.getByRole('radio', { name: 'White' }).click();
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  await expect(page.locator('.turn-hint')).toHaveText('Your move', { timeout: 90_000 });
+  // Measure the board once (a click), then push it down without any scroll or resize event.
+  await page.locator('.board-wrap cg-board').click({ position: { x: 5, y: 5 } });
+  await page.evaluate(() => {
+    const spacer = document.createElement('div');
+    spacer.style.height = '37px';
+    document.querySelector('.battle')!.prepend(spacer);
+  });
+  await move(page, 'e2', 'e4');
+  await page.getByRole('button', { name: 'Moves' }).click();
+  await expect(page.locator('.move-list li').first()).toHaveText(/^e4/);
+});

@@ -25,10 +25,7 @@ export function stakes(player: number, opponent: number, gamesPlayed: number) {
   };
 }
 
-/** Games against the training dummy are for warming up: they never change the rating. */
-export const isRatedWorld = (world: string) => world !== 'training';
-
-/** Rated games played so far (for the placement K-factor). */
+/** Rated games played so far (for the placement K-factor; games from v0.5, when training was unrated, are left out). */
 export const ratedGames = (history: readonly { unrated?: boolean }[]) => history.filter((g) => !g.unrated).length;
 
 /** 1–3 skulls by how far the opponent is above you (0 when below or equal). */

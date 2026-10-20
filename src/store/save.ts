@@ -7,7 +7,7 @@ import { characterById } from '../data/characters';
 import type { Side } from '../game/chess';
 import { newClock, type ClockState } from '../game/clock';
 import { characterRecord, xpForGame, type GameRecord } from '../game/progress';
-import { isRatedWorld, ratedGames, ratingDelta } from '../game/rating';
+import { ratedGames, ratingDelta } from '../game/rating';
 import type { Result } from '../game/rules';
 import type { GameReview } from '../review/analyse';
 import type { BoardThemeId } from '../ui/boards';
@@ -133,8 +133,7 @@ export const useSave = create<Store>()((setState, getState) => ({
     const c = a && characterById(a.characterId);
     if (!a || !c) return;
     const score = result.winner === null ? 0.5 : result.winner === a.color ? 1 : 0;
-    const unrated = !isRatedWorld(c.world);
-    const delta = a.practice || unrated ? 0 : ratingDelta(s.rating, c.rating, score, ratedGames(s.history));
+    const delta = a.practice ? 0 : ratingDelta(s.rating, c.rating, score, ratedGames(s.history));
     const record: GameRecord = {
       id: a.id,
       characterId: c.id,
@@ -151,7 +150,6 @@ export const useSave = create<Store>()((setState, getState) => ({
       auto: a.auto,
       ...(a.startFen ? { startFen: a.startFen } : {}),
       ...(a.practice ? { practice: true } : {}),
-      ...(unrated ? { unrated: true } : {}),
     };
     if (a.practice) {
       setState({ active: null, lastResult: { record, xpGained: 0, crownEarned: false, newItems: [], newQuests: [] } });
