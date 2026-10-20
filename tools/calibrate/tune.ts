@@ -22,7 +22,7 @@ for (const row of run.rows) {
     blunderPct: k.blunderPct!,
   };
   // Random moves only below 1000, and only to weaken.
-  if (c.rating < 1000) next.blunderPct = Number(clamp(k.blunderPct! - step / 40, 0, 30).toFixed(1));
+  if (c.tier < 1000) next.blunderPct = Number(clamp(k.blunderPct! - step / 40, 0, 30).toFixed(1));
   out[row.id] = next;
 }
 writeFileSync(outFile, JSON.stringify(out, null, 1));

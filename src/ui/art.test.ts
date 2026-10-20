@@ -66,16 +66,25 @@ describe('the hero', () => {
 });
 
 describe('the world map', () => {
-  it('has a stone for every rank, inside its region, from the bottom up, and draws every pixel', async () => {
-    const { mapLayout, renderMap } = await import('./worldMap');
+  it('has every character on the path, inside its region, from the bottom up, and draws every pixel', async () => {
+    const { heroSpot, mapLayout, renderMap } = await import('./worldMap');
     const l = mapLayout();
-    expect(l.nodes.map((n) => n.rating)).toEqual([...new Set(CHARACTERS.map((c) => c.rating))].sort((a, b) => a - b));
+    expect(l.nodes.map((n) => n.id).sort()).toEqual(CHARACTERS.map((c) => c.id).sort());
     for (const n of l.nodes) {
       const reg = l.regions.find((r) => r.world === n.world)!;
-      expect(n.y, String(n.rating)).toBeGreaterThan(reg.y0);
-      expect(n.y, String(n.rating)).toBeLessThan(reg.y1);
+      expect(n.y, n.id).toBeGreaterThan(reg.y0);
+      expect(n.y, n.id).toBeLessThan(reg.y1);
     }
     for (let i = 1; i < l.nodes.length; i++) expect(l.nodes[i].y).toBeLessThan(l.nodes[i - 1].y);
+    // The hero never stands on top of a figure.
+    for (const r of [400, 650, 900, 1333, 1777, 2150, 2600]) {
+      const h = heroSpot(l, r);
+      expect(l.nodes.every((n) => Math.hypot(n.x - h.x, n.y - h.y) >= 12), String(r)).toBe(true);
+    }
     expect(renderMap(l).every((p) => p !== null)).toBe(true);
+  });
+  it('every character has a figure', async () => {
+    const { figureOf } = await import('./figures');
+    for (const c of CHARACTERS) expect(figureOf(c), c.id).not.toBeNull();
   });
 });

@@ -36,7 +36,7 @@ export async function playGame(white: Character, black: Character, predict: Pred
     const side = moves.length % 2 === 0 ? 'white' : 'black';
     const me = side === 'white' ? white : black;
     const opp = side === 'white' ? black : white;
-    const m = await chooseBotMove(me, moves, opp.rating, predict, rand);
+    const m = await chooseBotMove(me, moves, opp.tier, predict, rand);
     if (!m) break;
     wins[side].push(m.winChance);
     if (m.source !== 'book' && shouldResign(me, wins[side])) {

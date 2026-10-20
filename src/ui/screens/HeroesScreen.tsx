@@ -30,7 +30,9 @@ export function HeroesScreen() {
         <section key={w.id}>
           <h2>{w.name}</h2>
           <div className="hero-grid">
-            {CHARACTERS.filter((c) => c.world === w.id).map((c) => {
+            {CHARACTERS.filter((c) => c.world === w.id)
+              .sort((a, b) => a.rating - b.rating)
+              .map((c) => {
               const rec = characterRecord(history, c.id);
               return (
                 <button key={c.id} className="hero" onClick={() => challenge({ characterId: c.id, color: null, auto: false })} style={{ ['--fc' as string]: FACTIONS[c.faction].color }}>

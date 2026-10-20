@@ -27,8 +27,8 @@ const dir = '.cache/calibration';
 mkdirSync(dir, { recursive: true });
 const file = `${dir}/${NAME}.jsonl`;
 
-const ranks = [...new Set(CHARACTERS.map((c) => c.rating))].sort((a, b) => a - b);
-const at = (r: number) => CHARACTERS.filter((c) => c.rating === r);
+const ranks = [...new Set(CHARACTERS.map((c) => c.tier))].sort((a, b) => a - b);
+const at = (r: number) => CHARACTERS.filter((c) => c.tier === r);
 const pairs: [string, string][] = [];
 ranks.forEach((r, i) => {
   if (r < lo || r > hi) return;
@@ -88,14 +88,14 @@ await new Promise<void>((resolve) => {
   }
 });
 
-const ids = CHARACTERS.filter((c) => c.rating >= lo && c.rating <= hi).map((c) => c.id);
-const targets = Object.fromEntries(ids.map((i) => [i, CHARACTERS.find((c) => c.id === i)!.rating]));
+const ids = CHARACTERS.filter((c) => c.tier >= lo && c.tier <= hi).map((c) => c.id);
+const targets = Object.fromEntries(ids.map((i) => [i, CHARACTERS.find((c) => c.id === i)!.tier]));
 const inRange = results.filter((r) => r.white in targets && r.black in targets);
 const fitted = fitRatings(inRange, targets);
 const rows = ids.map((i) => {
   const c = CHARACTERS.find((x) => x.id === i)!;
   const n = inRange.filter((r) => r.white === i || r.black === i).length;
-  return { id: i, rating: c.rating, measured: fitted[i], diff: fitted[i] - c.rating, games: n };
+  return { id: i, rating: c.tier, measured: fitted[i], diff: fitted[i] - c.tier, games: n };
 });
 console.log('\ncharacter            ladder  measured  diff  games');
 for (const r of rows) console.log(`${r.id.padEnd(20)} ${String(r.rating).padStart(6)} ${String(r.measured).padStart(9)} ${String(r.diff).padStart(5)} ${String(r.games).padStart(6)}`);

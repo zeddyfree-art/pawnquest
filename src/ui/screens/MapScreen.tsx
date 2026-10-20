@@ -1,28 +1,28 @@
-// Home: the drawn world map, hardest at the top. Every rank is a stone on the path; tap one to see its characters
-// with their crowns and your record. Your hero stands at your rank. The Play button (below) picks an opponent.
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CHARACTERS, FACTIONS, WORLDS } from '../../data/characters';
+// Home: the drawn world map, hardest at the top. Every opponent stands on the path as a little figure with their
+// name and rating; tap one to challenge them. Your hero stands where your rating puts you. The Play button
+// (below) picks an opponent.
+import { useEffect, useMemo, useRef } from 'react';
+import { CHARACTERS, FACTIONS, WORLDS, characterById, shortName } from '../../data/characters';
 import { characterRecord } from '../../game/progress';
-import { skulls } from '../../game/rating';
 import { useSave } from '../../store/save';
-import { CrownIcon, HeroSprite, Portrait, Skulls } from '../components';
+import { CrownIcon, HeroSprite } from '../components';
+import { figureOf } from '../figures';
+import { heroUrl } from '../hero';
 import { useNav } from '../nav';
-import { TEMPERAMENTS } from '../../config';
-import { mapLayout, mapUrl } from '../worldMap';
+import { heroSpot, mapLayout, mapUrl } from '../worldMap';
+
+const FIGURE = 64;
 
 export function MapScreen() {
   const { rating, history, hero } = useSave();
   const challenge = useNav((s) => s.challenge);
   const layout = useMemo(() => mapLayout(), []);
-  const here = layout.nodes.reduce((best, n) => (Math.abs(n.rating - rating) < Math.abs(best.rating - rating) ? n : best), layout.nodes[0]);
-  const [open, setOpen] = useState<number | null>(null);
-  const hereRef = useRef<HTMLButtonElement>(null);
+  const spot = heroSpot(layout, rating);
+  const heroRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
-    hereRef.current?.scrollIntoView({ block: 'center' });
+    heroRef.current?.scrollIntoView({ block: 'center' });
   }, []);
   const pct = (v: number, of: number) => `${(100 * v) / of}%`;
-  const openChars = open === null ? [] : CHARACTERS.filter((c) => c.rating === open);
-  const openWorld = openChars[0] && WORLDS.find((w) => w.id === openChars[0].world);
 
   return (
     <div className="map">
@@ -30,7 +30,7 @@ export function MapScreen() {
         <img className="worldmap-art" src={mapUrl(layout)} alt="" aria-hidden="true" />
         {layout.regions.map((r) => {
           const w = WORLDS.find((x) => x.id === r.world)!;
-          // The sign stands on the side away from the region's first stone.
+          // The sign stands on the side away from the region's first figure.
           const first = layout.nodes.find((n) => n.world === r.world)!;
           return (
             <span key={r.world} className={`region-sign ${first.x < layout.w / 2 ? 'right' : 'left'}`} style={{ top: pct(r.y1 - 3, layout.h) }}>
@@ -39,77 +39,39 @@ export function MapScreen() {
           );
         })}
         {layout.nodes.map((n) => {
-          const chars = CHARACTERS.filter((c) => c.rating === n.rating);
-          const beaten = chars.filter((c) => characterRecord(history, c.id).wins > 0).length;
-          const isHere = n === here;
+          const c = characterById(n.id)!;
+          const fig = figureOf(c);
+          const rec = characterRecord(history, c.id);
           return (
             <button
-              key={n.rating}
-              ref={isHere ? hereRef : undefined}
-              className={`node${isHere ? ' here' : ''}${beaten === chars.length ? ' cleared' : ''}`}
-              style={{ left: pct(n.x, layout.w), top: pct(n.y, layout.h) }}
-              aria-label={`Rank ${n.rating}: ${chars.map((c) => c.name).join(', ')}${beaten ? `, ${beaten} beaten` : ''}`}
-              onClick={() => setOpen(n.rating)}
+              key={n.id}
+              className={`figure${rec.wins ? ' beaten' : ''}`}
+              style={{ left: pct(n.x, layout.w), top: pct(n.y, layout.h), ['--fc' as string]: FACTIONS[c.faction].color }}
+              aria-label={`${c.name}, ${c.rating}${rec.wins ? `, beaten ${rec.wins} times` : ''}`}
+              onClick={() => challenge({ characterId: c.id, color: null, auto: false })}
             >
-              <span className="node-rating">{n.rating}</span>
-              <span className="node-faces">
-                {chars.map((c) => (
-                  <span key={c.id} className={`node-dot${characterRecord(history, c.id).wins ? ' won' : ''}`} style={{ background: FACTIONS[c.faction].color }} />
-                ))}
+              {fig && <img src={heroUrl(fig.look, fig.outfit)} alt="" width={(FIGURE * 3) / 4} height={FIGURE} />}
+              <span className="figure-label">
+                <b>
+                  {rec.crown !== 'none' && <CrownIcon crown={rec.crown} size={12} />}
+                  {shortName(c.name)}
+                </b>
+                <small>{c.rating}</small>
               </span>
             </button>
           );
         })}
         {hero && (
-          <span className={`map-hero ${here.x < layout.w / 2 ? 'right' : 'left'}`} style={{ left: pct(here.x, layout.w), top: pct(here.y, layout.h) }} aria-label={`You are here: ${rating}`}>
-            <HeroSprite hero={hero} size={72} />
-            <span className="you-marker">{hero.name}</span>
+          <span ref={heroRef} className="figure map-hero" style={{ left: pct(spot.x, layout.w), top: pct(spot.y, layout.h) }} aria-label={`You: ${rating}`}>
+            <HeroSprite hero={hero} size={FIGURE} />
+            <span className="figure-label you">
+              <b>{hero.name}</b>
+              <small>{rating}</small>
+            </span>
           </span>
         )}
       </div>
-
-      {open !== null && openWorld && (
-        <div className="sheet-backdrop" onClick={() => setOpen(null)}>
-          <div className="sheet panel" role="dialog" aria-label={`Rank ${open}`} onClick={(e) => e.stopPropagation()}>
-            <header className="sheet-head">
-              <span>
-                <h2>
-                  {openWorld.name} · {open}
-                </h2>
-                <p className="muted small">{openWorld.blurb}</p>
-              </span>
-              <button className="btn" aria-label="Close" onClick={() => setOpen(null)}>
-                ✕
-              </button>
-            </header>
-            <div className="rank-cards">
-              {openChars.map((c) => {
-                const rec = characterRecord(history, c.id);
-                return (
-                  <button key={c.id} className="char-card" style={{ ['--fc' as string]: FACTIONS[c.faction].color }} onClick={() => challenge({ characterId: c.id, color: null, auto: false })}>
-                    <Portrait character={c} size={80} />
-                    <span className="char-info">
-                      <b className="char-name">{c.name}</b>
-                      <span className="char-tags">
-                        <span className="pill faction">{FACTIONS[c.faction].name}</span>
-                        <span className="pill">{TEMPERAMENTS[c.temperament].label}</span>
-                      </span>
-                      <span className="char-rec">
-                        <CrownIcon crown={rec.crown} />
-                        {rec.games ? `${rec.wins} won · ${rec.draws} drawn · ${rec.losses} lost` : 'Not fought yet'}
-                      </span>
-                    </span>
-                    <span className="char-side">
-                      <span className="char-rating">{c.rating}</span>
-                      <Skulls n={skulls(rating, c.rating)} />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      <p className="sr-only">{CHARACTERS.length} opponents on the map.</p>
     </div>
   );
 }

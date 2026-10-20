@@ -10,8 +10,10 @@ export type Faction = 'gambiteer' | 'classicist' | 'strategist' | 'neutral' | 'b
 export interface Character {
   id: string;
   name: string;
-  /** The fixed ladder rating shown to the player. */
+  /** The character's rating, as measured by calibration (shown to the player, used for Elo). */
   rating: number;
+  /** The ladder step it was built for (400, 600 … 2500): sets its region, network and temperature schedule. */
+  tier: number;
   world: WorldId;
   faction: Faction;
   temperament: Temperament;
@@ -133,6 +135,7 @@ export const CHARACTERS: Character[] = ROWS.map(([id, name, rating, faction, tem
   id,
   name,
   rating,
+  tier: rating,
   world: worldOf(rating),
   faction,
   temperament,
