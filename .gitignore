@@ -1,0 +1,9 @@
+node_modules
+dist
+public/models/*.onnx
+public/ort
+.venv-models
+test-results
+playwright-report
+*.local
+.cache

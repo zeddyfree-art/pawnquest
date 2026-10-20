@@ -1,12 +1,54 @@
 # Pawnquest
 
 Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3) at a fixed rating, from
-Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, runs entirely in your
-browser.
+Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
+your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: phase 0 (engine spike and calibration concept). See [docs/brief.md](docs/brief.md) and
-[docs/phase0-concept.md](docs/phase0-concept.md).
+Status: **first playable version (v0.1)**. See [docs/brief.md](docs/brief.md) for the plan and
+[docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
+
+## What is in v0.1
+
+- **World map**: a quest path through 7 worlds, 32 opponents (3 factions per rank), your position on it, and a
+  **Play** button that picks a fitting opponent (a bit above you, a bit below after three losses in a row, factions
+  rotated, every third game the faction you score worst against, colours alternating).
+- **Pre-match card**: portrait, faction, taunt, risk skulls and exactly what a win, draw or loss does to your rating.
+- **Battle**: 15+10 clocks, pixel board and pieces, the opponent's speech bubble, resign, offer a draw, move list,
+  pause (the game waits for you, and your clock with it).
+- **Bots**: each plays its own opening book (hand-written, per the roster), then Maia-3 at its rating with its
+  temperament; the lowest ranks blunder now and then; they think like humans, resign hopeless games (from 1000 up)
+  and accept a draw only in an endgame they are not winning.
+- **Rating**: Elo against fixed-rating bots, K = 40 for the first 20 games then 24, floor 400.
+- **Progress**: crowns per opponent (bronze, silver, gold at 1, 3, 5 wins), Hall of Heroes, faction scores, XP and
+  levels, rating graph, save export/import.
+
+Not yet: game review (phase 3), drawn portraits and more piece sets (phase 4), installable/offline PWA, full
+ladder calibration (phase 5).
+
+## Develop
+
+```sh
+npm install                      # also copies the bundled Maia-3 5M model into public/models
+pip install -r tools/models/requirements.txt
+npm run fetch-models             # builds public/models/maia3_79m_int8.onnx (downloads 316 MB once)
+npm run dev                      # or: npm run build && npm run preview
+npm test                         # logic tests (Vitest)
+npm run e2e                      # browser smoke tests against the build (Playwright)
+```
+
+All tunable numbers (K-factors, temperatures, think times, resign and draw rules) live in `src/config.ts`; the
+roster is `src/data/characters.ts` and the opening books are `src/data/openings.ts`.
+
+## Credits
+
+- [Maia-3](https://github.com/CSSLab/maia3) (CSSLab, University of Toronto, AGPL-3.0): the human-like chess model.
+- [maia3-js](https://www.npmjs.com/package/maia3-js) (MIT): JavaScript inference and the bundled 5M model.
+- [Mobile Maia](https://github.com/Dash1971/maia-chess-android) (AGPL-3.0): the ONNX export of the 79M model,
+  its human think-time model and draw rule.
+- [chessground](https://github.com/lichess-org/chessground) and [chessops](https://github.com/niklasf/chessops)
+  (GPL-3.0) from Lichess.
+- Fonts: Press Start 2P and Nunito (SIL Open Font License), served from the app itself.
 
 ## License
 
-AGPL-3.0, as required by the Maia-3 model weights (CSSLab, University of Toronto).
+AGPL-3.0, as required by the Maia-3 model weights.
