@@ -32,7 +32,7 @@ export interface BotMove {
 
 export function effectiveSampling(c: Character): { temperature: number; topP: number } {
   const t = TEMPERAMENTS[c.temperament];
-  return { temperature: t.temperature * rankTemperatureFactor(c.rating), topP: t.topP };
+  return { temperature: t.temperature * rankTemperatureFactor(c.rating) * (c.tempScale ?? 1), topP: t.topP };
 }
 
 /** `startFen`: the game started from another position ("Try again"); then the bot plays without its book. */

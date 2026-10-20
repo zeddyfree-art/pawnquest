@@ -3,6 +3,7 @@
 // are starting values; calibration will tune them so each character plays like its rating.
 import { modelForRating, type ModelId, type Temperament } from '../config';
 import type { OpeningId } from './openings';
+import { CALIBRATION } from './calibration';
 
 export type Faction = 'gambiteer' | 'classicist' | 'strategist' | 'neutral' | 'boss';
 
@@ -18,6 +19,8 @@ export interface Character {
   engineElo: number;
   /** Chance (%) of a random legal move instead of Maia's, for the lowest ranks. */
   blunderPct: number;
+  /** Factor on the temperament's sampling temperature (a calibration knob; 1 = as the temperament says). */
+  tempScale: number;
   /** How many of its own moves the character plays from its book. */
   bookDepth: number;
   /** Fake think time per move, seconds. */
@@ -135,12 +138,14 @@ export const CHARACTERS: Character[] = ROWS.map(([id, name, rating, faction, tem
   temperament,
   engineElo: Math.max(600, rating),
   blunderPct: 0,
+  tempScale: 1,
   bookDepth,
   think: THINK[faction],
   book: { white, vsE4, vsD4 },
   taunt,
   model: modelForRating(rating),
   ...extra,
+  ...CALIBRATION[id],
 }));
 
 export const characterById = (id: string) => CHARACTERS.find((c) => c.id === id);
