@@ -9,6 +9,7 @@ import { newClock, type ClockState } from '../game/clock';
 import { characterRecord, xpForGame, type GameRecord } from '../game/progress';
 import { ratingDelta } from '../game/rating';
 import type { Result } from '../game/rules';
+import type { GameReview } from '../review/analyse';
 
 export interface ActiveGame {
   id: string;
@@ -22,6 +23,9 @@ export interface ActiveGame {
   /** Ply at which the player last offered a draw (one offer per few moves). */
   drawOfferPly: number | null;
   startedAt: string;
+  /** "Try again": the game starts from this position, is not rated and is not kept in the history. */
+  startFen?: string;
+  practice?: boolean;
 }
 
 export interface Settings {
@@ -38,6 +42,8 @@ export interface SaveData {
   history: GameRecord[];
   active: ActiveGame | null;
   settings: Settings;
+  /** Game reviews by game id (kept for the most recent games). */
+  reviews: Record<string, GameReview>;
 }
 
 export const NEW_SAVE: SaveData = {
@@ -48,13 +54,18 @@ export const NEW_SAVE: SaveData = {
   history: [],
   active: null,
   settings: { sound: true, motion: true },
+  reviews: {},
 };
+
+/** Reviews kept per save (the oldest are dropped). */
+const MAX_REVIEWS = 50;
 
 interface Store extends SaveData {
   loaded: boolean;
   /** The last finished game, for the result screen. */
   lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean } | null;
-  startGame(characterId: string, color: Side, auto: boolean): void;
+  startGame(characterId: string, color: Side, auto: boolean, opts?: { startFen?: string; practice?: boolean }): void;
+  setReview(gameId: string, review: GameReview): void;
   updateActive(patch: Partial<ActiveGame>): void;
   finishGame(result: Result): void;
   abandonActive(): void;
@@ -66,14 +77,14 @@ interface Store extends SaveData {
 const db = typeof indexedDB !== 'undefined' ? createStore('pawnquest', 'save') : undefined;
 const KEY = 'save-v1';
 
-const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings });
+const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews });
 
 export const useSave = create<Store>()((setState, getState) => ({
   ...NEW_SAVE,
   loaded: false,
   lastResult: null,
 
-  startGame(characterId, color, auto) {
+  startGame(characterId, color, auto, opts) {
     setState({
       active: {
         id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
@@ -85,6 +96,8 @@ export const useSave = create<Store>()((setState, getState) => ({
         botWinChances: [],
         drawOfferPly: null,
         startedAt: new Date().toISOString(),
+        ...(opts?.startFen ? { startFen: opts.startFen } : {}),
+        ...(opts?.practice ? { practice: true } : {}),
       },
       lastResult: null,
     });
@@ -101,7 +114,7 @@ export const useSave = create<Store>()((setState, getState) => ({
     const c = a && characterById(a.characterId);
     if (!a || !c) return;
     const score = result.winner === null ? 0.5 : result.winner === a.color ? 1 : 0;
-    const delta = ratingDelta(s.rating, c.rating, score, s.history.length);
+    const delta = a.practice ? 0 : ratingDelta(s.rating, c.rating, score, s.history.length);
     const record: GameRecord = {
       id: a.id,
       characterId: c.id,
@@ -116,7 +129,13 @@ export const useSave = create<Store>()((setState, getState) => ({
       ratingAfter: s.rating + delta,
       date: new Date().toISOString(),
       auto: a.auto,
+      ...(a.startFen ? { startFen: a.startFen } : {}),
+      ...(a.practice ? { practice: true } : {}),
     };
+    if (a.practice) {
+      setState({ active: null, lastResult: { record, xpGained: 0, crownEarned: false } });
+      return;
+    }
     const crownBefore = characterRecord(s.history, c.id).crown;
     const history = [...s.history, record];
     const crownAfter = characterRecord(history, c.id).crown;
@@ -129,6 +148,12 @@ export const useSave = create<Store>()((setState, getState) => ({
       active: null,
       lastResult: { record, xpGained, crownEarned: crownAfter !== crownBefore },
     });
+  },
+
+  setReview(gameId, review) {
+    const keep = new Set(getState().history.slice(-MAX_REVIEWS).map((g) => g.id));
+    const reviews = Object.fromEntries(Object.entries({ ...getState().reviews, [gameId]: review }).filter(([id]) => keep.has(id) || id === gameId));
+    setState({ reviews });
   },
 
   abandonActive() {
@@ -158,7 +183,7 @@ export function parseSave(json: string): SaveData {
     throw new Error('This is not a Pawnquest save file.');
   }
   if (!d || d.version !== 1 || typeof d.rating !== 'number' || !Array.isArray(d.history)) throw new Error('This is not a Pawnquest save file.');
-  return { ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) } } as SaveData;
+  return { ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) }, reviews: d.reviews ?? {} } as SaveData;
 }
 
 export function exportSave(): string {
@@ -174,7 +199,7 @@ async function write() {
 
 export async function loadSave() {
   const stored = db ? await get<SaveData>(KEY, db).catch(() => undefined) : undefined;
-  useSave.setState({ ...(stored ? { ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings } } : NEW_SAVE), loaded: true });
+  useSave.setState({ ...(stored ? { ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings }, reviews: stored.reviews ?? {} } : NEW_SAVE), loaded: true });
   useSave.subscribe(() => {
     if (queued) return;
     queued = true;

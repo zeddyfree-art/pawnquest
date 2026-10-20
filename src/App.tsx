@@ -9,6 +9,7 @@ import { MapScreen } from './ui/screens/MapScreen';
 import { PreMatch } from './ui/screens/PreMatch';
 import { ProfileScreen } from './ui/screens/ProfileScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
+import { ReviewScreen } from './ui/screens/ReviewScreen';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -54,6 +55,7 @@ export function App() {
         {screen === 'result' && <ResultScreen />}
         {screen === 'heroes' && <HeroesScreen />}
         {screen === 'profile' && <ProfileScreen />}
+        {screen === 'review' && <ReviewScreen />}
       </main>
       {!inFight && screen !== 'prematch' && (
         <nav className="tabs" aria-label="Main">

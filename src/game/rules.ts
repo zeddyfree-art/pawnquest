@@ -11,8 +11,8 @@ export interface Result {
 }
 
 /** Over by the rules of the board alone (not by clock, resignation or agreement)? */
-export function boardResult(moves: readonly string[]): Result | null {
-  const r = replay(moves);
+export function boardResult(moves: readonly string[], startFen?: string): Result | null {
+  const r = replay(moves, startFen);
   const pos = r.pos;
   if (pos.isCheckmate()) return { winner: other(pos.turn), termination: 'checkmate' };
   if (pos.isStalemate()) return { winner: null, termination: 'stalemate' };

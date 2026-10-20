@@ -78,3 +78,19 @@ export const BOT = {
   /** …and only when its winning chance is at most this. */
   drawAcceptWinChance: 0.55,
 };
+
+/** Game review. Labels by Win% the move lost (the brief's thresholds); engine depths kept low enough for a phone. */
+export const REVIEW = {
+  excellent: 2,
+  good: 5,
+  inaccuracy: 10,
+  mistake: 20,
+  /** Every position, quickly. */
+  quick: { depth: 12, movetime: 600 },
+  /** The player's worst moves, again and deeper, with the three best moves. */
+  deep: { depth: 16, movetime: 2000, multiPv: 3 },
+  /** How many key moments the review explains. */
+  moments: 3,
+  /** Moves within this many Win% of the best move count as "the right move" for Maia insights. */
+  goodEnough: 5,
+};

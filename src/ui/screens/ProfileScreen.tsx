@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
+import { characterById } from '../../data/characters';
+import { useNav } from '../nav';
 
 function RatingChart({ points }: { points: number[] }) {
   if (points.length < 2) return <p className="muted">Your rating graph appears after your first games.</p>;
@@ -34,6 +36,8 @@ export function ProfileScreen() {
   const wins = history.filter((g) => g.score === 1).length;
   const draws = history.filter((g) => g.score === 0.5).length;
   const lvl = levelFor(xp);
+  const review = useNav((s) => s.review);
+  const recent = history.slice(-10).reverse();
 
   const download = () => {
     const blob = new Blob([exportSave()], { type: 'application/json' });
@@ -80,6 +84,30 @@ export function ProfileScreen() {
       <div className="panel">
         <h2>Rating</h2>
         <RatingChart points={[history[0]?.ratingBefore ?? rating, ...history.map((g) => g.ratingAfter)]} />
+      </div>
+      <div className="panel">
+        <h2>Recent games</h2>
+        {recent.length ? (
+          <ul className="recent">
+            {recent.map((g) => (
+              <li key={g.id}>
+                <span className={`res res-${g.score === 1 ? 'w' : g.score === 0 ? 'l' : 'd'}`}>{g.score === 1 ? 'W' : g.score === 0 ? 'L' : 'D'}</span>
+                <span className="recent-who">
+                  {characterById(g.characterId)?.name ?? g.characterId}
+                  <small>
+                    {new Date(g.date).toLocaleDateString()} · {Math.ceil(g.moves.length / 2)} moves · {g.ratingAfter - g.ratingBefore >= 0 ? '+' : ''}
+                    {g.ratingAfter - g.ratingBefore}
+                  </small>
+                </span>
+                <button className="btn" onClick={() => review(g.id)} disabled={g.moves.length < 2}>
+                  Review
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">Your games appear here, each with a review.</p>
+        )}
       </div>
       <div className="panel settings">
         <h2>Settings</h2>

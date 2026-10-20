@@ -21,6 +21,10 @@ export interface GameRecord {
   date: string;
   /** Picked by the Play button (true) or chosen on the map. */
   auto: boolean;
+  /** Started from this position ("Try again" from a review). */
+  startFen?: string;
+  /** Not rated, not in the history. */
+  practice?: boolean;
 }
 
 export type Crown = 'none' | 'bronze' | 'silver' | 'gold';

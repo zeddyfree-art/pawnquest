@@ -5,12 +5,12 @@ import { CLOCK } from '../../config';
 import { characterById, REACTIONS, type Character } from '../../data/characters';
 import { acceptsDraw, chooseBotMove, shouldResign, thinkTimeMs } from '../../engine/botPlayer';
 import { loadModel, maiaPredict, MODELS, useMaia } from '../../engine/maia';
-import { materialBalance, needsPromotion, other, replay, uciFromBoard, type Side } from '../../game/chess';
+import { captured, materialBalance, needsPromotion, other, replay, uciFromBoard, type Side } from '../../game/chess';
 import { flagged, press, runFor, showTime, stop, timeLeft } from '../../game/clock';
 import { boardResult, timeoutResult, type Result } from '../../game/rules';
 import { useSave } from '../../store/save';
 import { Board } from '../Board';
-import { Portrait, type Mood } from '../components';
+import { Material, Portrait, type Mood } from '../components';
 import { useNav } from '../nav';
 import { pieceDataUrl } from '../pixelArt';
 import { sfx } from '../sound';
@@ -47,7 +47,8 @@ export function Battle() {
   const saidLosing = useRef(false);
 
   const moves = active?.moves ?? [];
-  const r = useMemo(() => replay(moves), [moves]);
+  const startFen = active?.startFen;
+  const r = useMemo(() => replay(moves, startFen), [moves, startFen]);
   const playerSide: Side = active?.color ?? 'white';
   const botSide = other(playerSide);
   const playerTurn = r.pos.turn === playerSide;
@@ -77,6 +78,13 @@ export function Battle() {
     },
     [motion],
   );
+
+  // A speech bubble stays for a few seconds (tap it to close it sooner).
+  useEffect(() => {
+    if (!bubble) return;
+    const t = setTimeout(() => setBubble(''), 5000);
+    return () => clearTimeout(t);
+  }, [bubble]);
 
   // Load the bot's brain; the clock does not run while you were away or while it loads.
   useEffect(() => {
@@ -120,7 +128,7 @@ export function Battle() {
       setNow(n);
       const a = useSave.getState().active;
       const side = a && flagged(a.clock, n);
-      if (a && side) finish(timeoutResult(replay(a.moves).pos, side));
+      if (a && side) finish(timeoutResult(replay(a.moves, a.startFen).pos, side));
     }, 200);
     return () => clearInterval(t);
   }, [ready, finish]);
@@ -135,7 +143,7 @@ export function Battle() {
     const started = Date.now();
     (async () => {
       try {
-        const bm = await chooseBotMove(c, before, rating, maiaPredict);
+        const bm = await chooseBotMove(c, before, rating, maiaPredict, Math.random, active.startFen);
         if (!bm) return;
         const chances = [...active.botWinChances, bm.winChance];
         if (shouldResign(c, chances)) {
@@ -152,7 +160,7 @@ export function Battle() {
         const a = useSave.getState().active;
         if (!a || a.id !== gameId || a.moves.length !== before.length || ended.current) return;
         const after = [...a.moves, bm.uci];
-        const san = replay(after).sans[after.length - 1];
+        const san = replay(after, a.startFen).sans[after.length - 1];
         updateActive({ moves: after, clock: press(a.clock, botSide, Date.now(), INC), botWinChances: chances });
         effects(san);
         if (san.includes('+') || san.includes('#')) setBubble(line(c, 'check'));
@@ -162,7 +170,7 @@ export function Battle() {
           setBubble(line(c, 'losing'));
         }
         setMood(bm.winChance > 0.75 ? 'smug' : bm.winChance < 0.2 ? 'defeated' : 'idle');
-        const end = boardResult(after);
+        const end = boardResult(after, a.startFen);
         if (end) {
           await sleep(700);
           finish(end);
@@ -190,10 +198,10 @@ export function Battle() {
     const a = useSave.getState().active;
     if (!uci || !a || ended.current) return;
     const after = [...a.moves, uci];
-    const san = replay(after).sans[after.length - 1];
+    const san = replay(after, a.startFen).sans[after.length - 1];
     updateActive({ moves: after, clock: press(a.clock, playerSide, Date.now(), INC) });
     effects(san);
-    const end = boardResult(after);
+    const end = boardResult(after, a.startFen);
     if (end) setTimeout(() => finish(end), 500);
   };
 
@@ -215,6 +223,7 @@ export function Battle() {
   };
 
   const balance = materialBalance(r.pos) * (playerSide === 'white' ? 1 : -1);
+  const taken = captured(r.pos);
   const clockOf = (side: Side) => timeLeft(active.clock, side, now);
   const loadingText =
     modelStatus === 'downloading' ? `Summoning your opponent… ${progress}%` : 'Summoning your opponent…';
@@ -222,24 +231,22 @@ export function Battle() {
   return (
     <div className="battle">
       <div className="fighter foe">
-        <Portrait character={c} size={56} mood={mood} />
+        <Portrait character={c} size={44} mood={mood} />
         <div className="fighter-info">
           <b>{c.name}</b>
-          <small>
-            {c.rating}
-            {balance < 0 && <span className="material"> +{-balance}</span>}
-          </small>
+          <small>{c.rating}</small>
+          <Material roles={taken[botSide]} color={playerSide} plus={-balance} />
         </div>
         <span className={`clock${active.clock.running === botSide ? ' running' : ''}${clockOf(botSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(botSide))}</span>
-        {bubble && (
-          <p className="bubble speech" aria-live="polite">
-            {bubble}
-          </p>
-        )}
       </div>
 
       <div className={`board-wrap${shake ? ' shake' : ''}`}>
         <Board pos={r.pos} orientation={playerSide} movable={ready && playerTurn && !ended.current && !promo} lastMove={r.lastMove} onMove={onMove} />
+        {bubble && ready && (
+          <p className="bubble speech" aria-live="polite" onClick={() => setBubble('')}>
+            {bubble}
+          </p>
+        )}
         {!ready && !error && (
           <div className="overlay">
             <p className="pixel">{loadingText}</p>
@@ -283,10 +290,8 @@ export function Battle() {
       <div className="fighter me">
         <div className="fighter-info">
           <b>You</b>
-          <small>
-            {rating}
-            {balance > 0 && <span className="material"> +{balance}</span>}
-          </small>
+          <small>{rating}</small>
+          <Material roles={taken[playerSide]} color={botSide} plus={balance} />
         </div>
         <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : `${c.name.split(/[ ,]/)[0]} is thinking…`) : ''}</span>
         <span className={`clock${active.clock.running === playerSide ? ' running' : ''}${clockOf(playerSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(playerSide))}</span>
