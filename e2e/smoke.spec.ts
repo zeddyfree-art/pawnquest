@@ -56,9 +56,9 @@ test('after a game, the review explains the key moments and "Try again" starts f
   await move(page, 'f2', 'f3');
   await expect(hint).toHaveText('Your move');
   await move(page, 'g2', 'g4');
-  await expect(page.locator('.turn-hint, .result').first()).toBeVisible();
+  // The bot may mate at once (2…Qh4#): wait for whichever comes, our turn or the result.
+  await page.waitForFunction(() => !!document.querySelector('.result') || document.querySelector('.turn-hint')?.textContent === 'Your move', null, { timeout: 30_000 });
   if (!(await page.locator('.result').count())) {
-    await expect(hint).toHaveText('Your move');
     await page.getByRole('button', { name: 'Resign' }).click();
     await page.getByRole('button', { name: 'Yes, resign' }).click();
   }

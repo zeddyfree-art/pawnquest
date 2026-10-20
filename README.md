@@ -4,7 +4,7 @@ Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3)
 Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
 your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: **v0.2: game review**. See [docs/brief.md](docs/brief.md) for the plan and
+Status: **v0.3: the cozy valley look**. See [docs/brief.md](docs/brief.md) for the plan and
 [docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
 
 ## What is in it
@@ -29,10 +29,20 @@ Status: **v0.2: game review**. See [docs/brief.md](docs/brief.md) for the plan a
   - Maia insights: "Only 12% of 900-rated players find this move", "This is the most common mistake at your level",
     "Players around 1400 usually see this".
   - **Try again** replays the position against the same bot (not rated).
-- **Board** always fits the screen; captured pieces and the material difference are shown; clearer 32×32 pieces.
+- **Board** always fits the screen; captured pieces and the material difference are shown.
+- **Look** (v0.3, "cozy valley"): warm daylight, parchment panels in wooden frames, Pixelify Sans headings.
+  - 64×64 pieces with soft shading and gold details.
+  - A board per region: meadow, cobblestone, oak, castle stone, forest moss, obsidian and royal marble.
+    You can also pick one board for everywhere.
+  - A drawn backdrop per region behind the fight, with ambient particles: leaves, rain, pollen, dust, fireflies,
+    embers and sparkles.
+  - Portraits of all 32 characters in four moods, built from parts (hair, headwear, clothing, beard, accessories).
+  - A notice when a new version is published.
 
-Next: the look and feel (phase 4, see [docs/roadmap.md](docs/roadmap.md)), installable/offline PWA, full ladder
-calibration (phase 5).
+All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portraits.ts`, `src/data/looks.ts`).
+
+Next: your own character with six gear slots and quests that unlock gear, boards, pieces and pets (phase 4b), then
+the drawn map, music per region and offline play (phase 4c). See [docs/roadmap.md](docs/roadmap.md).
 
 ## Develop
 

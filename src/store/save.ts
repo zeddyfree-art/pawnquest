@@ -10,6 +10,7 @@ import { characterRecord, xpForGame, type GameRecord } from '../game/progress';
 import { ratingDelta } from '../game/rating';
 import type { Result } from '../game/rules';
 import type { GameReview } from '../review/analyse';
+import type { BoardThemeId } from '../ui/boards';
 
 export interface ActiveGame {
   id: string;
@@ -30,8 +31,10 @@ export interface ActiveGame {
 
 export interface Settings {
   sound: boolean;
-  /** Screen shake and other motion; also off when the system asks for reduced motion. */
+  /** Screen shake, ambient particles and other motion; also off when the system asks for reduced motion. */
   motion: boolean;
+  /** 'region': each region's own board; otherwise always this one. */
+  boardTheme: 'region' | BoardThemeId;
 }
 
 export interface SaveData {
@@ -53,7 +56,7 @@ export const NEW_SAVE: SaveData = {
   xp: 0,
   history: [],
   active: null,
-  settings: { sound: true, motion: true },
+  settings: { sound: true, motion: true, boardTheme: 'region' },
   reviews: {},
 };
 

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { initUpdateCheck, useUpdate } from './version';
 import { levelFor } from './game/progress';
 import { loadSave, useSave } from './store/save';
 import { PawnIcon } from './ui/components';
@@ -23,8 +24,10 @@ export function App() {
   const xp = useSave((s) => s.xp);
   const { screen, go } = useNav();
 
+  const updateAvailable = useUpdate((s) => s.available);
   useEffect(() => {
     void loadSave();
+    initUpdateCheck();
   }, []);
 
   if (!loaded) return <div className="splash pixel">Pawnquest</div>;
@@ -47,6 +50,11 @@ export function App() {
             </span>
           </span>
         </header>
+      )}
+      {updateAvailable && !inFight && (
+        <button className="update-toast" onClick={() => location.reload()}>
+          A new version of Pawnquest is ready. Tap to update.
+        </button>
       )}
       <main className="content">
         {screen === 'map' && <MapScreen />}
