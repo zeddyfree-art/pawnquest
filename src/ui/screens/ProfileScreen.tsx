@@ -3,6 +3,7 @@ import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
 import { characterById } from '../../data/characters';
 import { useNav } from '../nav';
+import { mistakePatterns, phaseAdvice } from '../../review/patterns';
 
 function RatingChart({ points }: { points: number[] }) {
   if (points.length < 2) return <p className="muted">Your rating graph appears after your first games.</p>;
@@ -29,7 +30,9 @@ function RatingChart({ points }: { points: number[] }) {
 }
 
 export function ProfileScreen() {
-  const { rating, peak, xp, history, settings, setSettings, importSave, resetAll } = useSave();
+  const { rating, peak, xp, history, reviews, settings, setSettings, importSave, resetAll } = useSave();
+  const pat = mistakePatterns(reviews, history);
+  const top = pat.themes.slice(0, 3);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const file = useRef<HTMLInputElement>(null);
@@ -84,6 +87,36 @@ export function ProfileScreen() {
       <div className="panel">
         <h2>Rating</h2>
         <RatingChart points={[history[0]?.ratingBefore ?? rating, ...history.map((g) => g.ratingAfter)]} />
+      </div>
+      <div className="panel study">
+        <h2>What to study</h2>
+        {pat.games === 0 || (!top.length && !pat.weakPhase) ? (
+          <p className="muted">Review your games (Review on the result screen or below) and this shows which mistakes come back most, with what to practise.</p>
+        ) : (
+          <>
+            <p className="muted small">
+              From {pat.games} reviewed {pat.games === 1 ? 'game' : 'games'}
+              {pat.accuracy !== null ? ` · average accuracy ${pat.accuracy}%` : ''}
+            </p>
+            {top.length > 0 && (
+              <ol className="patterns">
+                {top.map((t) => (
+                  <li key={t.theme}>
+                    <div className="pattern-head">
+                      <b>{t.theme}</b>
+                      <span className="pattern-count">{t.count}×</span>
+                    </div>
+                    <span className="bar small">
+                      <span style={{ width: `${(100 * t.count) / top[0].count}%` }} />
+                    </span>
+                    <p>{t.advice}</p>
+                  </li>
+                ))}
+              </ol>
+            )}
+            {pat.weakPhase && <p className="phase-advice">{phaseAdvice(pat.weakPhase)}</p>}
+          </>
+        )}
       </div>
       <div className="panel">
         <h2>Recent games</h2>

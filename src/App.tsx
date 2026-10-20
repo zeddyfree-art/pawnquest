@@ -14,6 +14,7 @@ import { ReviewScreen } from './ui/screens/ReviewScreen';
 import { CreateHero } from './ui/screens/CreateHero';
 import { HeroScreen } from './ui/screens/HeroScreen';
 import { applyPieceSet } from './ui/pieces';
+import { PlayDock } from './ui/PlayDock';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -82,6 +83,7 @@ export function App() {
         {screen === 'create' && <CreateHero />}
         {screen === 'review' && <ReviewScreen />}
       </main>
+      {['map', 'heroes', 'hero', 'profile'].includes(screen) && <PlayDock />}
       {!inFight && screen !== 'prematch' && screen !== 'create' && (
         <nav className="tabs" aria-label="Main">
           {TABS.map((t) => (

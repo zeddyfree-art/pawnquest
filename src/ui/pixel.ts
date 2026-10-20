@@ -50,6 +50,8 @@ export interface PartOptions {
   outline?: boolean;
   pattern?: (x: number, y: number) => string | null;
   rim?: boolean;
+  /** Only look inside this box [x0, y0, x1, y1] (speeds up small parts on a big canvas). */
+  box?: [number, number, number, number];
 }
 
 export class Canvas {
@@ -73,8 +75,9 @@ export class Canvas {
     const line = lineOf(fill);
     const light = tone(fill, 0.28);
     const shade = tone(fill, -0.16);
-    for (let y = 0; y < h; y++)
-      for (let x = 0; x < w; x++) {
+    const [bx0, by0, bx1, by1] = opts.box ?? [0, 0, w, h];
+    for (let y = Math.max(0, Math.floor(by0)); y < Math.min(h, Math.ceil(by1)); y++)
+      for (let x = Math.max(0, Math.floor(bx0)); x < Math.min(w, Math.ceil(bx1)); x++) {
         if (!inside(x, y)) continue;
         const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
         let c = opts.pattern?.(x, y) ?? fill;

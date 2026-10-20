@@ -25,6 +25,8 @@ export interface GameRecord {
   startFen?: string;
   /** Not rated, not in the history. */
   practice?: boolean;
+  /** In the history but did not change the rating (training grounds). */
+  unrated?: boolean;
 }
 
 export type Crown = 'none' | 'bronze' | 'silver' | 'gold';

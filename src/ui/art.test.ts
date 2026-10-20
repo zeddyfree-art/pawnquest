@@ -64,3 +64,18 @@ describe('the hero', () => {
     for (const s of PIECE_SETS) expect(renderPiece('queen', 'white', s.id)).not.toEqual(renderPiece('queen', 'black', s.id));
   });
 });
+
+describe('the world map', () => {
+  it('has a stone for every rank, inside its region, from the bottom up, and draws every pixel', async () => {
+    const { mapLayout, renderMap } = await import('./worldMap');
+    const l = mapLayout();
+    expect(l.nodes.map((n) => n.rating)).toEqual([...new Set(CHARACTERS.map((c) => c.rating))].sort((a, b) => a - b));
+    for (const n of l.nodes) {
+      const reg = l.regions.find((r) => r.world === n.world)!;
+      expect(n.y, String(n.rating)).toBeGreaterThan(reg.y0);
+      expect(n.y, String(n.rating)).toBeLessThan(reg.y1);
+    }
+    for (let i = 1; i < l.nodes.length; i++) expect(l.nodes[i].y).toBeLessThan(l.nodes[i - 1].y);
+    expect(renderMap(l).every((p) => p !== null)).toBe(true);
+  });
+});

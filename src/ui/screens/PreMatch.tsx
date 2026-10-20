@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { FACTIONS, characterById } from '../../data/characters';
 import { TEMPERAMENTS } from '../../config';
 import type { Side } from '../../game/chess';
-import { skulls, stakes } from '../../game/rating';
+import { isRatedWorld, ratedGames, skulls, stakes } from '../../game/rating';
 import { characterRecord } from '../../game/progress';
 import { useSave } from '../../store/save';
 import { MODELS, useMaia } from '../../engine/maia';
@@ -18,7 +18,8 @@ export function PreMatch() {
   const modelStatus = useMaia((s) => s.status);
   const c = matchup && characterById(matchup.characterId);
   if (!matchup || !c) return null;
-  const st = stakes(rating, c.rating, history.length);
+  const st = stakes(rating, c.rating, ratedGames(history));
+  const rated = isRatedWorld(c.world);
   const rec = characterRecord(history, c.id);
   const needsDownload = c.model === '79m' && modelStatus['79m'] !== 'ready';
 
@@ -43,6 +44,8 @@ export function PreMatch() {
           </div>
         </div>
         <p className="bubble">“{c.taunt}”</p>
+        {!rated && <p className="training-note">Training: your rating does not change here. Wins still count for quests and gear.</p>}
+        {rated && (
         <div className="stakes" aria-label="What is at stake">
           <div className="stake win">
             <span>WIN</span>
@@ -57,6 +60,7 @@ export function PreMatch() {
             <Delta value={st.loss} />
           </div>
         </div>
+        )}
         {matchup.color ? (
           <p className="color-line">
             You play <b>{matchup.color === 'white' ? 'White' : 'Black'}</b> · 15+10
