@@ -19,6 +19,8 @@ const arg = (name: string, dflt: string) => {
 };
 const GAMES = Number(arg('games', '40'));
 const NAME = arg('out', 'run');
+/** Keep the moves of every game (for analysis with tools/calibrate/blunders.ts). */
+const MOVES = process.argv.includes('--moves');
 const knobs: Record<string, Knobs> = existsSync(arg('knobs', '')) ? JSON.parse(readFileSync(arg('knobs', ''), 'utf8')) : {};
 const [lo, hi] = arg('only', '0-9999').split('-').map(Number);
 const dir = '.cache/calibration';
@@ -64,13 +66,13 @@ await new Promise<void>((resolve) => {
       if (next >= jobs.length) return child.kill();
       child.send({ type: 'job', job: jobs[next++] });
     };
-    child.on('message', (m: { type: string; id: number } & Result & { plies: number; end: string }) => {
+    child.on('message', (m: { type: string; id: number } & Result & { plies: number; end: string; moves: string[]; random: number[] }) => {
       if (m.type === 'ready') {
         child.send({ type: 'knobs', knobs });
         return give();
       }
       const job = jobs.find((j) => j.id === m.id)!;
-      const row = { key: job.key, white: m.white, black: m.black, score: m.score, plies: m.plies, end: m.end };
+      const row = { key: job.key, white: m.white, black: m.black, score: m.score, plies: m.plies, end: m.end, ...(MOVES ? { moves: m.moves, random: m.random } : {}) };
       appendFileSync(file, JSON.stringify(row) + '\n');
       results.push(row);
       finished++;
