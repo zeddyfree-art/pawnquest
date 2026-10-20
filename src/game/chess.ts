@@ -126,3 +126,14 @@ export function materialBalance(pos: Chess): number {
   const pawns = (s: Side) => b.pawn.intersect(b[s]).size();
   return pieceMaterial(pos, 'white') + pawns('white') - pieceMaterial(pos, 'black') - pawns('black');
 }
+
+const START_COUNT: Record<Role, number> = { pawn: 8, knight: 2, bishop: 2, rook: 2, queen: 1, king: 1 };
+const ORDER: Role[] = ['queen', 'rook', 'bishop', 'knight', 'pawn'];
+
+/** The pieces each side has taken (the other side's missing pieces), most valuable first. */
+export function captured(pos: Chess): Record<Side, Role[]> {
+  const b = pos.board;
+  const missing = (side: Side) =>
+    ORDER.flatMap((role) => Array<Role>(Math.max(0, START_COUNT[role] - b[role].intersect(b[side]).size())).fill(role));
+  return { white: missing('black'), black: missing('white') };
+}

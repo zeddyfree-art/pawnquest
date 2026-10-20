@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { FACTIONS, type Character } from '../data/characters';
 import type { Crown } from '../game/progress';
-import { drawPortrait } from './pixelArt';
+import { drawPortrait, pieceDataUrl } from './pixelArt';
+import type { Role } from 'chessops/types';
 
 export type Mood = 'idle' | 'thinking' | 'smug' | 'defeated';
 
@@ -66,5 +67,17 @@ export function PawnIcon({ size = 12 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 8 8" shapeRendering="crispEdges" aria-hidden="true">
       <path d="M3 0h2v1h1v2H5v1h1v1h1v2H1V5h1V4h1V3H2V1h1z" fill="currentColor" />
     </svg>
+  );
+}
+
+/** The pieces a side has taken, and how far ahead it is in material (+3), as on Lichess. */
+export function Material({ roles, color, plus }: { roles: Role[]; color: 'white' | 'black'; plus: number }) {
+  return (
+    <span className="captured" aria-label={roles.length ? `Captured: ${roles.join(', ')}${plus > 0 ? `, ahead by ${plus}` : ''}` : undefined}>
+      {roles.map((r, i) => (
+        <img key={i} src={pieceDataUrl(r, color)} alt="" width={18} height={18} className={i > 0 && roles[i - 1] === r ? 'stack' : ''} />
+      ))}
+      {plus > 0 && <b className="material">+{plus}</b>}
+    </span>
   );
 }
