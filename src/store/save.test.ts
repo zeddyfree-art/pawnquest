@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { characterById } from '../data/characters';
 import { exportSave, parseSave, useSave } from './save';
 
 describe('save', () => {
@@ -10,8 +11,10 @@ describe('save', () => {
     useSave.getState().updateActive({ moves: ['e2e4'] });
     useSave.getState().finishGame({ winner: 'white', termination: 'resign' });
     const after = useSave.getState();
-    expect(after.rating).toBe(620); // K=40, equal ratings
-    expect(after.peak).toBe(620);
+    // K=40 while being placed: a win against an opponent rated r gives 40 × (1 − expected score).
+    const expected = 600 + Math.round(40 * (1 - 1 / (1 + 10 ** ((characterById('pip')!.rating - 600) / 400))));
+    expect(after.rating).toBe(expected);
+    expect(after.peak).toBe(expected);
     expect(after.history).toHaveLength(1);
     expect(after.active).toBeNull();
     expect(after.lastResult).toMatchObject({ crownEarned: true, xpGained: 80 });

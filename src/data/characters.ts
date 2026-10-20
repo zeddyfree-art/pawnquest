@@ -1,6 +1,6 @@
 // The roster: who you fight, how strong they are and how they play. Names, openings and lines come from the
-// roster review (artifact "Pawnquest Roster", October 2026). Strength knobs (engineElo, blunderPct, temperament)
-// are starting values; calibration will tune them so each character plays like its rating.
+// roster review (artifact "Pawnquest Roster", October 2026). Each is built for a ladder step (`tier`: region,
+// network, temperature schedule); the rating shown is the strength calibration measured (data/calibration.ts).
 import { modelForRating, type ModelId, type Temperament } from '../config';
 import type { OpeningId } from './openings';
 import { CALIBRATION } from './calibration';
@@ -96,7 +96,7 @@ const ROWS: Row[] = [
   ['hobb', 'Hobb the Farmhand', 800, 'classicist', 'human', 4, ['fourKnights'], ['e5'], ['qgd'], "Plant your pieces and watch 'em grow.", { blunderPct: 2 }],
   ['nell', 'Nell the Rat Catcher', 800, 'strategist', 'steady', 4, ['colle'], ['french'], ['slav'], 'I set my traps and wait. The rats always come.', { blunderPct: 2 }],
 
-  ['zed', 'Zed the Fire-Juggler', 1000, 'gambiteer', 'chaotic', 5, ['danish'], ['stafford'], ['albin'], 'Catch! Oops. Too hot to handle?'],
+  ['zed', 'Zed the Fire-Juggler', 1000, 'gambiteer', 'human', 5, ['danish'], ['stafford'], ['albin'], 'Catch! Oops. Too hot to handle?'],
   ['squire-aldric', 'Squire Aldric', 1000, 'classicist', 'human', 5, ['italian'], ['twoKnights'], ['qgd'], "My master says I'm ready. Let's prove him right!"],
   ['grunwald', 'Grunwald the Miller', 1000, 'strategist', 'steady', 5, ['london'], ['pirc'], ['kid'], 'Grind by grind, the flour gets fine.'],
 
@@ -104,7 +104,7 @@ const ROWS: Row[] = [
   ['bram', 'Bram the Blacksmith', 1200, 'classicist', 'human', 6, ['scotch'], ['petroff'], ['qga'], "Strike while the iron's hot!"],
   ['captain-holt', 'Captain Holt of the Guard', 1200, 'strategist', 'steady', 6, ['queensGambit'], ['french'], ['slav'], 'Hold the line. Nobody passes my gate.'],
 
-  ['jester', 'The Jester', 1400, 'gambiteer', 'chaotic', 7, ['friedLiver'], ['traxler'], ['budapest'], "Why so serious? It's only your king!"],
+  ['jester', 'The Jester', 1400, 'gambiteer', 'human', 7, ['friedLiver'], ['traxler'], ['budapest'], "Why so serious? It's only your king!"],
   ['sir-cedric', 'Sir Cedric, Knight Errant', 1400, 'classicist', 'human', 7, ['ruyLopez'], ['openSpanish'], ['qgdOrthodox'], 'Have at thee! Honour demands a fair fight.'],
   ['bishop-anselm', 'Bishop Anselm', 1400, 'strategist', 'steady', 7, ['queensGambit'], ['caroKann'], ['qid'], 'Patience is a virtue. Yours will be tested.'],
 

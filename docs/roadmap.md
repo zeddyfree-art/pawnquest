@@ -14,7 +14,7 @@ made); this page is updated once they are in.
 | 4c | The world: a drawn map with a winding path through every rank and scenery per region (done, v0.5); music per region from the Ninja Adventure pack (CC0) (done, v0.6) | done |
 | — | Feedback round (v0.5): clearer digits, the hero preview stays in view while you make it, training games are unrated, Continue button at the bottom, speech beside the speaker, "What to study" on the profile | done (v0.5) |
 | 4d | Installable PWA and offline play, once everything is well tested | later |
-| 5 | Calibration of the whole ladder (bot vs bot, then real players 400–1200) | planned |
+| 5 | Calibration: 9,360 bot-vs-bot games measured every character's strength; each now shows its measured rating (557 to 2137), and the map shows them as figures on the path (v0.6.1). Next: real players 400–1200 | bots done |
 | 6 | Android, link with the repertoire app, more piece sets | later |
 
 ## Wishes collected so far (October 2026)
@@ -45,3 +45,18 @@ Claude has no image generator in this environment: anything it makes itself is d
 the current pieces and placeholder portraits are). For Stardew-level portraits and backdrops the options are
 AI-generated images run through a palette-and-pixel pipeline (`tools/pixelize`), CC0/open asset packs, or a mix;
 the design brief asks which.
+
+## Calibration (phase 5, October 2026)
+
+`tools/calibrate` plays every character against the others at its ladder step and everyone one step up, with
+the app's own bot (book, Maia, temperament, random moves at the bottom, resigning), 80 games per pair, 9,360
+games in all. An Elo fit (anchored on the ladder's mean) gives each character's measured strength, and that is
+now its rating. Findings:
+
+- The ladder came out compressed: 557 to 2137 instead of 400 to 2500. A top around 2200 is fine for the game.
+- Within a step, temperament matters a lot: steady and cold characters are up to 350 points stronger than
+  chaotic ones at the same Maia Elo. Zed and the Jester now play with a human temperament (their openings keep
+  them wild); the others keep the strength they have.
+- Errors (Stockfish depth 10, Lichess thresholds): about 2.5–3.4 blunders per 40 moves at 400–600 (partly the
+  deliberate random moves), 1.2–2.2 at 1000–1200, about 1 at 1400–1600, 0.5–0.8 at 1800–2000 and 0.35–0.7 at
+  2200 and up. Above 1000 the blunders come from Maia itself, which learned them from human games.
