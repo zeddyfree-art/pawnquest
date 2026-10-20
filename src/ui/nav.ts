@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Side } from '../game/chess';
 
-export type Screen = 'map' | 'prematch' | 'battle' | 'result' | 'heroes' | 'profile' | 'review';
+export type Screen = 'map' | 'prematch' | 'battle' | 'result' | 'heroes' | 'hero' | 'create' | 'profile' | 'review';
 
 export interface Matchup {
   characterId: string;

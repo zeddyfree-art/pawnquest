@@ -12,7 +12,7 @@ import { useSave } from '../../store/save';
 import { Board } from '../Board';
 import { REGION_BOARD } from '../boards';
 import { Scene } from '../Scene';
-import { Material, Portrait, type Mood } from '../components';
+import { HeroBust, Material, Portrait, type Mood } from '../components';
 import { useNav } from '../nav';
 import { pieceDataUrl } from '../pieces';
 import { sfx } from '../sound';
@@ -27,6 +27,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export function Battle() {
   const active = useSave((s) => s.active);
   const rating = useSave((s) => s.rating);
+  const hero = useSave((s) => s.hero);
   const motion = useSave((s) => s.settings.motion);
   const themeSetting = useSave((s) => s.settings.boardTheme);
   const { updateActive, finishGame } = useSave.getState();
@@ -292,8 +293,9 @@ export function Battle() {
       </div>
 
       <div className="fighter me">
+        {hero && <HeroBust hero={hero} mood={mood === 'defeated' ? 'happy' : mood === 'smug' ? 'sad' : 'idle'} />}
         <div className="fighter-info">
-          <b>You</b>
+          <b>{hero?.name ?? 'You'}</b>
           <small>{rating}</small>
           <Material roles={taken[playerSide]} color={botSide} plus={balance} />
         </div>

@@ -11,10 +11,14 @@ import { PreMatch } from './ui/screens/PreMatch';
 import { ProfileScreen } from './ui/screens/ProfileScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { ReviewScreen } from './ui/screens/ReviewScreen';
+import { CreateHero } from './ui/screens/CreateHero';
+import { HeroScreen } from './ui/screens/HeroScreen';
+import { applyPieceSet } from './ui/pieces';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
-  { screen: 'heroes', label: 'Heroes' },
+  { screen: 'heroes', label: 'Rivals' },
+  { screen: 'hero', label: 'Hero' },
   { screen: 'profile', label: 'Profile' },
 ];
 
@@ -22,6 +26,8 @@ export function App() {
   const loaded = useSave((s) => s.loaded);
   const rating = useSave((s) => s.rating);
   const xp = useSave((s) => s.xp);
+  const hasHero = useSave((s) => !!s.hero);
+  const pieceSet = useSave((s) => s.settings.pieceSet);
   const { screen, go } = useNav();
 
   const updateAvailable = useUpdate((s) => s.available);
@@ -31,6 +37,15 @@ export function App() {
   }, []);
 
   if (!loaded) return <div className="splash pixel">Pawnquest</div>;
+  applyPieceSet(pieceSet);
+  if (!hasHero)
+    return (
+      <div className="app screen-create">
+        <main className="content">
+          <CreateHero />
+        </main>
+      </div>
+    );
   const lvl = levelFor(xp);
   const inFight = screen === 'battle';
 
@@ -63,9 +78,11 @@ export function App() {
         {screen === 'result' && <ResultScreen />}
         {screen === 'heroes' && <HeroesScreen />}
         {screen === 'profile' && <ProfileScreen />}
+        {screen === 'hero' && <HeroScreen />}
+        {screen === 'create' && <CreateHero />}
         {screen === 'review' && <ReviewScreen />}
       </main>
-      {!inFight && screen !== 'prematch' && (
+      {!inFight && screen !== 'prematch' && screen !== 'create' && (
         <nav className="tabs" aria-label="Main">
           {TABS.map((t) => (
             <button key={t.screen} className={screen === t.screen ? 'on' : ''} aria-current={screen === t.screen ? 'page' : undefined} onClick={() => go(t.screen)}>

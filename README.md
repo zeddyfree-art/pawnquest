@@ -4,7 +4,7 @@ Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3)
 Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
 your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: **v0.3: the cozy valley look**. See [docs/brief.md](docs/brief.md) for the plan and
+Status: **v0.4: your own hero**. See [docs/brief.md](docs/brief.md) for the plan and
 [docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
 
 ## What is in it
@@ -31,6 +31,10 @@ Status: **v0.3: the cozy valley look**. See [docs/brief.md](docs/brief.md) for t
   - **Try again** replays the position against the same bot (not rated).
 - **Board** always fits the screen; captured pieces and the material difference are shown.
 - **Look** (v0.3, "cozy valley"): warm daylight, parchment panels in wooden frames, Pixelify Sans headings.
+- **Your hero** (v0.4): pick a class (Squire, Apprentice, Ranger, Bard) and a look; six gear slots (head, face,
+  body, legs, main hand, off hand) plus a pet. Every opponent drops their own item the first time you beat them.
+  Quests unlock boards, piece sets and pets; levels unlock more hair styles and colours. All unlocks are derived
+  from your game history, so an imported save unlocks the same things.
   - 64×64 pieces with soft shading and gold details.
   - A board per region: meadow, cobblestone, oak, castle stone, forest moss, obsidian and royal marble.
     You can also pick one board for everywhere.
@@ -41,8 +45,7 @@ Status: **v0.3: the cozy valley look**. See [docs/brief.md](docs/brief.md) for t
 
 All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portraits.ts`, `src/data/looks.ts`).
 
-Next: your own character with six gear slots and quests that unlock gear, boards, pieces and pets (phase 4b), then
-the drawn map, music per region and offline play (phase 4c). See [docs/roadmap.md](docs/roadmap.md).
+Next: the drawn map, music per region and offline play (phase 4c). See [docs/roadmap.md](docs/roadmap.md).
 
 ## Develop
 

@@ -1,4 +1,4 @@
-// The Hall of Heroes: every opponent, greyed out until you beat them once, with your record against each.
+// Rivals: every opponent, greyed out until you beat them once, with your record against each.
 import { CHARACTERS, FACTIONS, WORLDS } from '../../data/characters';
 import { characterRecord, factionScores } from '../../game/progress';
 import { useSave } from '../../store/save';
@@ -13,7 +13,7 @@ export function HeroesScreen() {
 
   return (
     <div className="heroes">
-      <h1>Hall of Heroes</h1>
+      <h1>Rivals</h1>
       <p className="muted">
         {beaten} of {CHARACTERS.length} defeated
       </p>
