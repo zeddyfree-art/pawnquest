@@ -32,7 +32,7 @@ export interface BotMove {
 
 export function effectiveSampling(c: Character): { temperature: number; topP: number } {
   const t = TEMPERAMENTS[c.temperament];
-  return { temperature: t.temperature * rankTemperatureFactor(c.rating), topP: t.topP };
+  return { temperature: t.temperature * rankTemperatureFactor(c.tier) * (c.tempScale ?? 1), topP: t.topP };
 }
 
 /** `startFen`: the game started from another position ("Try again"); then the bot plays without its book. */
@@ -80,7 +80,7 @@ export function thinkTimeMs(c: Character, clockMs: number, ply: number, rand: ()
 
 /** Resign after `resignMoves` own moves in a row with a hopeless position (never at the lowest ranks). */
 export function shouldResign(c: Character, ownWinChances: readonly number[]): boolean {
-  if (c.rating < BOT.resignFromRating) return false;
+  if (c.tier < BOT.resignFromRating) return false;
   const recent = ownWinChances.slice(-BOT.resignMoves);
   return recent.length === BOT.resignMoves && recent.every((w) => w < BOT.resignWinChance);
 }

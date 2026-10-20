@@ -39,8 +39,10 @@ test('play a game against the auto-matched opponent, resign, and keep the rating
   await page.getByRole('button', { name: 'Resign' }).click();
   await page.getByRole('button', { name: 'Yes, resign' }).click();
   await expect(page.getByRole('heading', { name: 'Defeat' })).toBeVisible();
+  const before = (await page.locator('.hud-rating').innerText()).trim();
+  expect(Number(before)).toBeLessThan(600);
   await page.reload();
-  await expect(page.locator('.hud-rating')).toContainText('580');
+  await expect(page.locator('.hud-rating')).toHaveText(before);
   expect(errors).toEqual([]);
 });
 

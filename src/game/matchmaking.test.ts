@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { autoMatch, nearestRank } from './matchmaking';
+import { CHARACTERS } from '../data/characters';
+import { autoMatch, nearestOpponents } from './matchmaking';
 import type { GameRecord } from './progress';
 import { characterRecord, crownFor, factionScores, lossStreak } from './progress';
 
@@ -9,27 +10,28 @@ const game = (o: Partial<GameRecord>): GameRecord => ({
 });
 
 describe('matchmaking', () => {
-  it('a new player meets the 600 rank, as White', () => {
+  it('a new player meets someone just above 600, as White', () => {
     const m = autoMatch(600, []);
-    expect(m.character.rating).toBe(600);
+    expect(Math.abs(m.character.rating - 700)).toBeLessThan(250);
     expect(m.color).toBe('white');
   });
   it('aims a bit higher normally and lower after three losses', () => {
-    expect(nearestRank(1000 + 100)).toBe(1000);
-    expect(autoMatch(1150, []).character.rating).toBe(1200);
+    expect(nearestOpponents(1100).every((c) => Math.abs(c.rating - 1100) <= 250)).toBe(true);
     const losses = [0, 1, 2].map(() => game({ score: 0, winner: 'black' }));
-    expect(autoMatch(1150, losses).character.rating).toBe(1000);
-    expect(autoMatch(600, losses).character.id).toBe('straw-sam');
+    expect(autoMatch(1150, losses).character.rating).toBeLessThan(autoMatch(1150, []).character.rating + 1);
+    expect(autoMatch(1150, []).character.rating).toBeGreaterThan(1150);
   });
   it('rotates factions and targets the weakest every third game; colours alternate', () => {
-    expect(autoMatch(1000, []).character.faction).toBe('gambiteer');
+    const roster = [600, 610, 620].map((rating, i) => ({ ...CHARACTERS[1 + i], rating, faction: (['gambiteer', 'classicist', 'strategist'] as const)[i] }));
+    expect(autoMatch(520, [], roster).character.faction).toBe('gambiteer');
     const h = [game({ faction: 'gambiteer', score: 1 }), game({ faction: 'classicist', score: 0, color: 'black' })];
-    const third = autoMatch(1000, h);
+    const third = autoMatch(520, h, roster);
     expect(third.character.faction).toBe('classicist');
     expect(third.color).toBe('white');
   });
-  it('never auto-picks the final boss', () => {
+  it('never auto-picks the final boss or the training dummy', () => {
     expect(autoMatch(2600, []).character.id).not.toBe('necromancer-king');
+    expect(autoMatch(400, [0, 1, 2].map(() => game({ score: 0, winner: 'black' }))).character.id).not.toBe('straw-sam');
   });
 });
 

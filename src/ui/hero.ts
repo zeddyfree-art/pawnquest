@@ -18,11 +18,14 @@ export interface HeroLook {
   hair: string;
   hairStyle: HeroHair;
   eyes: string;
+  /** For the opponents' figures: facial hair, and a skull or button-eyed face instead of a normal one. */
+  beard?: 'none' | 'stubble' | 'mustache' | 'beard' | 'longbeard';
+  face?: 'normal' | 'skull' | 'buttons';
 }
 
-export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap';
+export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap' | 'mitre' | 'hornhelm' | 'tophat' | 'circlet';
 export type FaceKind = 'glasses' | 'monocle' | 'mask' | 'fangs' | 'warpaint' | 'eyepatch';
-export type BodyKind = 'tunic' | 'robe' | 'armor' | 'plate' | 'apron' | 'cloak' | 'fur' | 'vest';
+export type BodyKind = 'tunic' | 'robe' | 'armor' | 'plate' | 'apron' | 'cloak' | 'fur' | 'vest' | 'rags' | 'jester' | 'coat' | 'burlap';
 export type LegsKind = 'trousers' | 'patched' | 'greaves';
 export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute';
 export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery';
@@ -134,6 +137,21 @@ function drawFrontHair(cv: Canvas, l: HeroLook) {
 function drawFace(cv: Canvas, l: HeroLook, mood: HeroMood) {
   const ink = '#3b2617';
   const ey = 18;
+  if (l.face === 'skull') {
+    for (const x of [18, 26]) for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 4; dx++) cv.dot(x + dx, ey - 1 + dy, '#1c1020');
+    const glow = mood === 'sad' ? '#3a4a44' : l.eyes;
+    cv.dot(19, ey, glow);
+    cv.dot(27, ey, glow);
+    cv.dot(23, 22, '#1c1020');
+    cv.dot(24, 22, '#1c1020');
+    for (let x = 20; x <= 27; x++) cv.dot(x, 25, x % 2 ? '#1c1020' : tone(l.skin, -0.2));
+    return;
+  }
+  if (l.face === 'buttons') {
+    for (const x of [19, 27]) cv.part(ellipse(x + 1, ey + 1, 1.8, 1.8), '#3b2617', { rim: false });
+    for (let x = 20; x <= 27; x++) cv.dot(x, 23, x % 2 ? '#7a4f2c' : tone(l.skin, -0.2));
+    return;
+  }
   for (const x of [19, 27]) {
     if (mood === 'happy') {
       cv.dot(x, ey + 1, ink);
@@ -156,6 +174,27 @@ function drawFace(cv: Canvas, l: HeroLook, mood: HeroMood) {
   if (mood === 'sad') [[22, 24], [23, 23], [24, 23], [25, 24]].forEach(([x, y]) => cv.dot(x, y, ink));
   else if (mood === 'happy') [[22, 22], [23, 23], [24, 23], [25, 22]].forEach(([x, y]) => cv.dot(x, y, ink));
   else [[23, 23], [24, 23]].forEach(([x, y]) => cv.dot(x, y, ink));
+}
+
+function drawBeard(cv: Canvas, l: HeroLook) {
+  const c = l.hair;
+  const mouth = ellipse(CX, 23.4, 2.6, 1);
+  switch (l.beard) {
+    case 'stubble':
+      for (let y = 21; y <= 27; y++) for (let x = 15; x <= 33; x++) if ((x + y) % 2 === 0 && HEAD(x + 0.5, y + 0.5) && !mouth(x + 0.5, y + 0.5)) cv.dot(x, y, tone(l.skin, -0.22));
+      break;
+    case 'mustache':
+      cv.part(any(ellipse(21.4, 22.4, 3, 1.3), ellipse(26.6, 22.4, 3, 1.3)), c, { rim: false });
+      break;
+    case 'beard':
+      cv.part(minus(only(any(ellipse(CX, 24.5, 9, 5.5), HEAD), rect(0, 21, 48, 48)), mouth), c);
+      break;
+    case 'longbeard':
+      cv.part(minus(any(only(HEAD, rect(0, 21, 48, 48)), polygon([[15, 22], [33, 22], [29, 37], [24, 41], [19, 37]])), mouth), c);
+      break;
+    default:
+      break;
+  }
 }
 
 // ---------- gear ----------
@@ -232,6 +271,25 @@ function drawBody(cv: Canvas, look: HeroLook | null, o: Outfit, withArms: boolea
       cv.part(rect(16, 42.5, 32, 44.6), '#6b4a2f', { rim: false });
       cv.part(any(polygon([[16, 33], [17.5, 30.6], [21, 29.6], [19, 47], [15, 47]]), polygon([[32, 33], [30.5, 30.6], [27, 29.6], [29, 47], [33, 47]])), c);
       cv.part(ellipse(CX, 31.2, 1.8, 1.6), GOLD);
+      break;
+    case 'rags':
+      cv.part(TORSO, c, { pattern: (x, y) => ((x * 7 + y * 3) % 17 === 0 ? tone(c, -0.3) : x > 26 && x < 31 && y > 36 && y < 41 ? c2 : null) });
+      cv.part(vneck, look?.skin ?? LINEN);
+      cv.part(polygon([[16, 45], [18, 48], [20, 45.5], [23, 48.5], [26, 45.5], [29, 48], [32, 45]]), c, { rim: false });
+      break;
+    case 'jester':
+      cv.part(TORSO, c, { pattern: (x, y) => ((Math.floor((x + y) / 4) + Math.floor((x - y + 48) / 4)) % 2 ? c2 : null) });
+      cv.part(any(...[17, 20.5, 24, 27.5, 31].map((x) => ellipse(x, 30.6, 2, 1.5))), GOLD);
+      break;
+    case 'coat':
+      cv.part(TORSO, c);
+      cv.part(polygon([[21, 29.8], [27, 29.8], [25, 38], [23, 38]]), '#f4ead6');
+      cv.part(any(polygon([[18, 30.5], [23, 38], [22, 47], [16, 47], [16.2, 34]]), polygon([[30, 30.5], [25, 38], [26, 47], [32, 47], [31.8, 34]])), c2);
+      cv.part(any(ellipse(21.5, 41, 0.9, 0.9), ellipse(21.5, 44, 0.9, 0.9)), GOLD, { outline: false, rim: false });
+      break;
+    case 'burlap':
+      cv.part(TORSO, c, { pattern: (x, y) => ((x + y) % 4 === 0 ? tone(c, -0.12) : null) });
+      cv.part(rect(16, 41, 32, 43), c2, { rim: false });
       break;
     default:
       // A tunic (and the plain linen shirt when nothing is worn).
@@ -411,6 +469,23 @@ function drawHeadGear(cv: Canvas, g: Extract<GearArt, { slot: 'head' }>) {
       cv.part(any(...[14.5, 18, 21.5, 26.5, 30, 33.5].map((x, i) => ellipse(x, 10.5 + Math.abs(x - CX) * 0.15 - (i % 2), 2.4, 1.6))), c);
       cv.part(any(ellipse(CX, 9, 1.8, 1.8), ellipse(19.5, 9.6, 1.2, 1.2), ellipse(28.5, 9.6, 1.2, 1.2)), c2);
       break;
+    case 'mitre':
+      cv.part(polygon([[16, 13], [32, 13], [32, 4], [24, -2], [16, 4]]), c);
+      cv.part(any(rect(23, 0, 25, 13), rect(20, 5, 28, 7)), GOLD, { rim: false });
+      break;
+    case 'hornhelm':
+      cv.part(any(polygon([[14, 11], [8, 6], [7, -1], [11, 4], [16, 8]]), polygon([[34, 11], [40, 6], [41, -1], [37, 4], [32, 8]])), c2);
+      cv.part(only(ellipse(CX, 17, 11.8, 11), rect(0, 0, 48, 14.5)), c);
+      break;
+    case 'tophat':
+      cv.part(ellipse(CX, 11.6, 14, 2.4), c);
+      cv.part(rect(17, -1, 31, 11), c);
+      cv.part(rect(17, 8, 31, 10), c2, { rim: false });
+      break;
+    case 'circlet':
+      cv.part(rect(13.4, 11, 34.6, 13), GOLD, { rim: false });
+      cv.part(ellipse(CX, 12, 1.7, 1.7), c2);
+      break;
     case 'crown':
       cv.part(polygon([[15.5, 12], [15, 3.5], [18.5, 7], [21, 1.5], [24, 6], [27, 1.5], [29.5, 7], [33, 3.5], [32.5, 12]]), c);
       cv.part(any(ellipse(CX, 9, 1.5, 1.5), ellipse(19, 9.4, 1.2, 1.2), ellipse(29, 9.4, 1.2, 1.2)), c2, { outline: false });
@@ -467,6 +542,7 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   cv.part(EARS, look.skin);
   cv.part(HEAD, look.skin);
   drawFace(cv, look, opts.mood ?? 'idle');
+  drawBeard(cv, look);
   if (hides !== 'all') drawFrontHair(cv, look);
   if (outfit.face) drawFaceGear(cv, outfit.face);
   if (outfit.head) drawHeadGear(cv, outfit.head);

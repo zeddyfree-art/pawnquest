@@ -434,10 +434,6 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 }
 .region-sign.left { left: 8px; }
 .region-sign.right { right: 8px; }
-.map-hero { position: absolute; z-index: 3; display: flex; flex-direction: column; align-items: center; transform: translate(-50%, -88%); pointer-events: none; }
-.map-hero.right { margin-left: 64px; }
-.map-hero.left { margin-left: -64px; }
-.map-hero .you-marker { margin-top: -4px; font-size: 12px; padding: 1px 8px; }
 @media (prefers-reduced-motion: no-preference) {
   .worldmap .node.here { animation: here-pulse 1.8s ease-in-out infinite; }
 }
@@ -450,3 +446,22 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 .sheet-head p { margin: 2px 0 0; }
 .sheet .rank-cards { margin-top: 12px; }
 .settings .range { display: grid; gap: 4px; max-width: 320px; }
+
+/* ---------- figures on the map ---------- */
+.worldmap .figure {
+  position: absolute; z-index: 2; transform: translate(-50%, calc(-100% + 22px)); display: flex; flex-direction: column; align-items: center;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--ink);
+}
+.worldmap .figure img, .worldmap .figure .hero-sprite img { image-rendering: pixelated; filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0)); }
+.worldmap .figure:hover img, .worldmap .figure:focus-visible img { filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
+.figure-label {
+  display: grid; justify-items: center; margin-top: -2px; padding: 1px 7px 2px; border-radius: 4px; line-height: 1.15; white-space: nowrap;
+  background: rgba(255, 248, 236, 0.92); box-shadow: 0 0 0 1.5px var(--outline), inset 0 -3px 0 var(--fc, var(--accent));
+}
+.figure-label b { font-size: 11px; display: inline-flex; align-items: center; gap: 2px; }
+.figure-label small { font-family: var(--pixel); font-weight: 700; font-size: 12px; color: var(--accent-dark); }
+.figure.beaten .figure-label { background: rgba(232, 246, 214, 0.95); }
+.worldmap .map-hero { z-index: 3; pointer-events: none; margin: 0; }
+.figure-label.you { background: var(--gold); box-shadow: 0 0 0 1.5px var(--outline); }
+.figure-label.you small { color: var(--ink); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

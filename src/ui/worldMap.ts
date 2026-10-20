@@ -2,14 +2,17 @@
 // at the bottom to the Necromancer's throne at the top, a winding path through every rank, and each region's own
 // ground, path and scenery (hay and fences, shacks and puddles, cottages and fields, a moat and towers, pines and
 // mushrooms, lava and bones, pillars and a red carpet). The page puts buttons for the ranks on top of it.
-import { CHARACTERS, WORLDS, type WorldId } from '../data/characters';
+import { CHARACTERS, WORLDS, type Character, type WorldId } from '../data/characters';
 import { Canvas, any, ellipse, pixelsToUrl, polygon, rect, tone, type Shape } from './pixel';
 
 export const MAP_W = 96;
-const RANK_H = 46;
-const PAD = 16;
+/** Path length per character, and extra room per region (for its sign). */
+const STEP_H = 32;
+const PAD = 18;
 
 export interface MapNode {
+  /** The character standing here. */
+  id: string;
   rating: number;
   world: WorldId;
   x: number;
@@ -23,40 +26,47 @@ export interface MapRegion {
 export interface MapLayout {
   w: number;
   h: number;
+  /** Bottom to top: region by region, and inside a region from the lowest rating up. */
   nodes: MapNode[];
   regions: MapRegion[];
 }
 
-export function mapLayout(): MapLayout {
-  const ranks = [...new Set(CHARACTERS.map((c) => c.rating))].sort((a, b) => a - b);
-  const worldOfRank = (r: number) => CHARACTERS.find((c) => c.rating === r)!.world;
+export function mapLayout(roster: readonly Character[] = CHARACTERS): MapLayout {
   const order = WORLDS.map((w) => w.id); // bottom to top
-  const counts = order.map((w) => ranks.filter((r) => worldOfRank(r) === w).length);
-  const h = counts.reduce((a, n) => a + n * RANK_H + PAD, 0) + 8;
+  const inWorld = order.map((w) => roster.filter((c) => c.world === w).sort((a, b) => a.rating - b.rating));
+  const h = inWorld.reduce((a, cs) => a + cs.length * STEP_H + PAD, 0) + 8;
   const regions: MapRegion[] = [];
   const nodes: MapNode[] = [];
   let bottom = h - 4;
   let i = 0;
   order.forEach((world, wi) => {
-    const top = bottom - counts[wi] * RANK_H - PAD;
+    const top = bottom - inWorld[wi].length * STEP_H - PAD;
     regions.push({ world, y0: top, y1: bottom });
-    ranks
-      .filter((r) => worldOfRank(r) === world)
-      .forEach((rating, k) => {
-        // Alternate sides, with a little wobble so the path never looks ruled.
-        const x = i % 2 === 0 ? 30 + ((i * 7) % 5) : 66 - ((i * 5) % 6);
-        nodes.push({ rating, world, x, y: bottom - PAD + 4 - (k + 0.5) * RANK_H });
-        i++;
-      });
+    inWorld[wi].forEach((c, k) => {
+      // Alternate sides, with a little wobble so the path never looks ruled.
+      const x = inWorld[wi].length === 1 ? MAP_W / 2 : i % 2 === 0 ? 28 + ((i * 7) % 5) : 68 - ((i * 5) % 6);
+      nodes.push({ id: c.id, rating: c.rating, world, x, y: bottom - PAD + 6 - (k + 0.5) * STEP_H });
+      i++;
+    });
     bottom = top;
   });
   // The bottom and top regions run to the edges of the picture.
   regions[0].y1 = h;
   regions[regions.length - 1].y0 = 0;
-  // The throne sits in the middle of its hall.
-  const last = nodes[nodes.length - 1];
-  if (last.world === 'throne') last.x = MAP_W / 2;
   return { w: MAP_W, h, nodes, regions };
+}
+
+/** Where the hero stands for a rating: halfway between the last character below it and the next one. Those
+ * two stand on opposite sides of the path, so the middle is free; next to a lone figure, a step to the side. */
+export function heroSpot(l: MapLayout, rating: number): { x: number; y: number } {
+  const n = l.nodes;
+  const next = n.findIndex((node) => node.rating > rating);
+  const beside = (node: MapNode, dy: number) => ({ x: node.x + (node.x <= MAP_W / 2 ? 24 : -24), y: node.y + dy });
+  if (next === 0) return beside(n[0], STEP_H * 0.4);
+  if (next === -1) return beside(n[n.length - 1], 0);
+  const [a, b] = [n[next - 1], n[next]];
+  if (Math.abs(a.x - b.x) < 20) return beside(b, (a.y - b.y) / 2);
+  return { x: MAP_W / 2, y: (a.y + b.y) / 2 };
 }
 
 // ---------- the path ----------
@@ -295,7 +305,7 @@ export function renderMap(l: MapLayout): (string | null)[] {
       for (let k = 0; k < n * 3 && placed.filter((p) => p.d === deco && p.y >= reg.y0 && p.y < reg.y1).length < n; k++) {
         const x = 5 + Math.floor(r() * (l.w - 10));
         const y = Math.floor(reg.y0 + 12 + r() * (reg.y1 - reg.y0 - 14));
-        if (near(x, y, 9) || l.nodes.some((nd) => Math.hypot(nd.x - x, nd.y - y) < 13)) continue;
+        if (near(x, y, 9) || l.nodes.some((nd) => Math.abs(nd.x - x) < 14 && y > nd.y - 22 && y < nd.y + 12)) continue;
         if (placed.some((p) => Math.hypot(p.x - x, p.y - y) < 7)) continue;
         if (y > reg.y1 - 10 && (x < 26 || x > l.w - 26)) continue; // keep the sign corners clear
         placed.push({ x, y, d: deco });
