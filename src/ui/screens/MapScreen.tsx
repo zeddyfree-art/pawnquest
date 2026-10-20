@@ -7,6 +7,7 @@ import { skulls } from '../../game/rating';
 import { useSave } from '../../store/save';
 import { CrownIcon, HeroSprite, Portrait, Skulls } from '../components';
 import { useNav } from '../nav';
+import { TEMPERAMENTS } from '../../config';
 import { mapLayout, mapUrl } from '../worldMap';
 
 export function MapScreen() {
@@ -86,17 +87,21 @@ export function MapScreen() {
                 const rec = characterRecord(history, c.id);
                 return (
                   <button key={c.id} className="char-card" style={{ ['--fc' as string]: FACTIONS[c.faction].color }} onClick={() => challenge({ characterId: c.id, color: null, auto: false })}>
-                    <Portrait character={c} size={56} />
+                    <Portrait character={c} size={80} />
                     <span className="char-info">
-                      <b>{c.name}</b>
-                      <small>
-                        {FACTIONS[c.faction].name} · {c.rating}
-                      </small>
+                      <b className="char-name">{c.name}</b>
+                      <span className="char-tags">
+                        <span className="pill faction">{FACTIONS[c.faction].name}</span>
+                        <span className="pill">{TEMPERAMENTS[c.temperament].label}</span>
+                      </span>
                       <span className="char-rec">
                         <CrownIcon crown={rec.crown} />
-                        {rec.games ? `${rec.wins}W ${rec.draws}D ${rec.losses}L` : 'Not fought yet'}
-                        <Skulls n={skulls(rating, c.rating)} />
+                        {rec.games ? `${rec.wins} won · ${rec.draws} drawn · ${rec.losses} lost` : 'Not fought yet'}
                       </span>
+                    </span>
+                    <span className="char-side">
+                      <span className="char-rating">{c.rating}</span>
+                      <Skulls n={skulls(rating, c.rating)} />
                     </span>
                   </button>
                 );

@@ -40,7 +40,7 @@ export function PreMatch() {
             <p className="rating-line">
               Rating <b>{c.rating}</b> · {TEMPERAMENTS[c.temperament].label}
             </p>
-            <Skulls n={skulls(rating, c.rating)} />
+            <Skulls n={skulls(rating, c.rating)} size={27} />
           </div>
         </div>
         <p className="bubble">“{c.taunt}”</p>
