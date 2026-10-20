@@ -4,7 +4,7 @@ Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3)
 Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
 your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: **v0.5: the world map**. See [docs/brief.md](docs/brief.md) for the plan and
+Status: **v0.6: music**. See [docs/brief.md](docs/brief.md) for the plan and
 [docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
 
 ## What is in it
@@ -50,7 +50,10 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
 - **What to study** (v0.5): the profile sums up your reviewed games: the mistakes that come back most, the phase
   of the game where you err most, and what to practise for each.
 
-Next: music per region, then (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
+- **Music** (v0.6): a tune for the map and one per region in a fight, crossfaded, with jingles for the result
+  and for new rewards; Music and volume in Settings.
+
+Next: (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Develop
 
@@ -74,7 +77,9 @@ roster is `src/data/characters.ts` and the opening books are `src/data/openings.
   its human think-time model and draw rule.
 - [chessground](https://github.com/lichess-org/chessground) and [chessops](https://github.com/niklasf/chessops)
   (GPL-3.0) from Lichess.
-- Fonts: Press Start 2P and Nunito (SIL Open Font License), served from the app itself.
+- Fonts: Pixelify Sans and Nunito (SIL Open Font License), served from the app itself.
+- Music and jingles: [Ninja Adventure](https://pixel-boy.itch.io/ninja-adventure-asset-pack) by Pixel-boy and
+  AAA (CC0), converted to MP3 in `public/audio` (see `public/audio/README.md`).
 
 ## License
 

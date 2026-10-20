@@ -11,7 +11,7 @@ made); this page is updated once they are in.
 | 3 | Game review: accuracy, labels, plain-English key moments, Maia insights, Try again | done (v0.2) |
 | 4a | Style "cozy valley", 64px pieces, a board per region, backdrops with ambience, portraits of all 32 characters in four moods | done (v0.3) |
 | 4b | Your character (class and look, six gear slots: head, face, body, legs, main hand, off hand, plus a pet); each opponent gives its own item on your first win; 22 quests unlock boards, seven piece sets and ten pets; hair styles and colours unlock with levels | done (v0.4) |
-| 4c | The world: a drawn map with a winding path through every rank and scenery per region (done, v0.5); music per region from the Ninja Adventure pack (CC0) (next) | in progress |
+| 4c | The world: a drawn map with a winding path through every rank and scenery per region (done, v0.5); music per region from the Ninja Adventure pack (CC0) (done, v0.6) | done |
 | — | Feedback round (v0.5): clearer digits, the hero preview stays in view while you make it, training games are unrated, Continue button at the bottom, speech beside the speaker, "What to study" on the profile | done (v0.5) |
 | 4d | Installable PWA and offline play, once everything is well tested | later |
 | 5 | Calibration of the whole ladder (bot vs bot, then real players 400–1200) | planned |

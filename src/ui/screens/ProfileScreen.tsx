@@ -148,6 +148,13 @@ export function ProfileScreen() {
           <input type="checkbox" checked={settings.sound} onChange={(e) => setSettings({ sound: e.target.checked })} /> Sound effects
         </label>
         <label>
+          <input type="checkbox" checked={settings.music} onChange={(e) => setSettings({ music: e.target.checked })} /> Music
+        </label>
+        <label className="range">
+          Music volume
+          <input type="range" min={0.05} max={1} step={0.05} value={settings.musicVolume} disabled={!settings.music} onChange={(e) => setSettings({ musicVolume: Number(e.target.value) })} />
+        </label>
+        <label>
           <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Motion (ambient effects, screen shake on check)
         </label>
       </div>

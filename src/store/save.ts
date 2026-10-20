@@ -40,6 +40,9 @@ export interface Settings {
   /** 'region': each region's own board; otherwise always this one. */
   boardTheme: 'region' | BoardThemeId;
   pieceSet: PieceSetId;
+  /** Background music per region, and its volume (0–1). */
+  music: boolean;
+  musicVolume: number;
 }
 
 export interface SaveData {
@@ -63,7 +66,7 @@ export const NEW_SAVE: SaveData = {
   xp: 0,
   history: [],
   active: null,
-  settings: { sound: true, motion: true, boardTheme: 'region', pieceSet: 'classic' },
+  settings: { sound: true, motion: true, boardTheme: 'region', pieceSet: 'classic', music: true, musicVolume: 0.35 },
   reviews: {},
   hero: null,
 };
