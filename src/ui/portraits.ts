@@ -47,68 +47,15 @@ export interface Look {
   backdrop: string;
 }
 
+import { Canvas as PixelCanvas, any, ellipse, lineOf, minus, mirrorAround, only, pixelsToUrl, polygon, rect, tone, type Pt } from './pixel';
+
 const N = 40;
-type Shape = (x: number, y: number) => boolean;
-const rect = (x0: number, y0: number, x1: number, y1: number): Shape => (x, y) => x >= x0 && x < x1 && y >= y0 && y < y1;
-const ellipse = (cx: number, cy: number, rx: number, ry: number): Shape => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
-const polygon = (pts: [number, number][]): Shape => (x, y) => {
-  let inside = false;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, yi] = pts[i];
-    const [xj, yj] = pts[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-};
-const any = (...s: Shape[]): Shape => (x, y) => s.some((f) => f(x, y));
-const minus = (a: Shape, ...b: Shape[]): Shape => (x, y) => a(x, y) && !b.some((f) => f(x, y));
-const only = (a: Shape, b: Shape): Shape => (x, y) => a(x, y) && b(x, y);
-const mirror = (pts: [number, number][]): [number, number][] => [...pts, ...pts.map(([x, y]) => [40 - x, y] as [number, number]).reverse()];
-
-function hexToRgb(hex: string): [number, number, number] {
-  const n = parseInt(hex.slice(1), 16);
-  return [n >> 16, (n >> 8) & 255, n & 255];
-}
-function tone(hex: string, f: number): string {
-  const [r, g, b] = hexToRgb(hex);
-  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f))));
-  return `#${[ch(r), ch(g), ch(b)].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-}
-/** Outline colour for a fill: much darker, nudged towards warm brown so outlines feel soft, never black. */
-function lineOf(hex: string): string {
-  const [r, g, b] = hexToRgb(tone(hex, -0.62));
-  return `#${[r + 18, g + 6, b].map((v) => Math.min(255, v).toString(16).padStart(2, '0')).join('')}`;
-}
-
-class Canvas {
-  px: (string | null)[] = new Array(N * N).fill(null);
-  set(x: number, y: number, c: string) {
-    if (x >= 0 && y >= 0 && x < N && y < N) this.px[y * N + x] = c;
-  }
-  get(x: number, y: number) {
-    return x >= 0 && y >= 0 && x < N && y < N ? this.px[y * N + x] : null;
-  }
-  /** Fills a shape with an outline in a darker shade of its colour and a light rim at the top left. */
-  part(shape: Shape, fill: string, opts: { outline?: boolean; pattern?: (x: number, y: number) => string | null; rim?: boolean } = {}) {
-    const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < N && y < N && shape(x + 0.5, y + 0.5);
-    const line = lineOf(fill);
-    const light = tone(fill, 0.28);
-    const shade = tone(fill, -0.16);
-    for (let y = 0; y < N; y++)
-      for (let x = 0; x < N; x++) {
-        if (!inside(x, y)) continue;
-        const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
-        let c = opts.pattern?.(x, y) ?? fill;
-        if (edge && opts.outline !== false) c = line;
-        else if (opts.rim !== false && (!inside(x - 1, y - 1) || !inside(x, y - 2))) c = light;
-        else if (!inside(x + 2, y + 1) || !inside(x + 1, y + 2)) c = c === fill ? shade : c;
-        this.set(x, y, c);
-      }
-  }
-  dot(x: number, y: number, c: string) {
-    this.set(x, y, c);
+class Canvas extends PixelCanvas {
+  constructor() {
+    super(N);
   }
 }
+const mirror = (pts: Pt[]): Pt[] => mirrorAround(20, pts);
 
 // ---------- the parts ----------
 const HEAD = ellipse(20, 16.6, 8.2, 9.2);
@@ -532,17 +479,7 @@ export function bustUrl(id: string, l: Look, mood: Mood): string {
   const key = `${id}:${mood}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  if (typeof document === 'undefined') return '';
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = N;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-  renderBust(l, mood).forEach((c, i) => {
-    if (!c) return;
-    ctx.fillStyle = c;
-    ctx.fillRect(i % N, Math.floor(i / N), 1, 1);
-  });
-  const url = canvas.toDataURL('image/png');
-  cache.set(key, url);
+  const url = pixelsToUrl(renderBust(l, mood), N, N);
+  if (url) cache.set(key, url);
   return url;
 }

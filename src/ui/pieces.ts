@@ -74,14 +74,45 @@ const DESIGNS: Record<Role, Design> = {
   },
 };
 
-const COLORS = {
+interface Palette {
+  line: string;
+  deep: string;
+  shade: string;
+  base: string;
+  light: string;
+  high: string;
+  carve: string;
+}
+
+const CLASSIC = {
   white: { line: '#4a2a17', deep: '#b98f61', shade: '#d9b98d', base: '#f3e2c0', light: '#fbf1dc', high: '#ffffff', carve: '#8a6040' },
   black: { line: '#1c1020', deep: '#2a1932', shade: '#3c2848', base: '#54405e', light: '#73597e', high: '#a08aaa', carve: '#160c1a' },
 };
+
+/** A palette from one base colour and an outline colour. */
+const ramp = (base: string, line: string): Palette => ({ line, deep: tone(base, -0.32), shade: tone(base, -0.16), base, light: tone(base, 0.28), high: tone(base, 0.6), carve: tone(base, -0.5) });
+
+export type PieceSetId = 'classic' | 'woodland' | 'ivory' | 'frost' | 'ember' | 'royal' | 'jade';
+export const PIECE_SETS: { id: PieceSetId; name: string; white: Palette; black: Palette }[] = [
+  { id: 'classic', name: 'Classic', ...CLASSIC },
+  { id: 'woodland', name: 'Birch & Walnut', white: ramp('#e8cf9c', '#4a2a17'), black: ramp('#7a4a2a', '#24130a') },
+  { id: 'ivory', name: 'Ivory & Onyx', white: ramp('#fbf6ea', '#3b3440'), black: ramp('#3a3a48', '#121218') },
+  { id: 'frost', name: 'Frost', white: ramp('#e4f2ff', '#2a3a5a'), black: ramp('#33558f', '#101a33') },
+  { id: 'ember', name: 'Ember', white: ramp('#ffe2a0', '#5a2a10'), black: ramp('#9a2c2c', '#2a0c0c') },
+  { id: 'royal', name: 'Royal', white: ramp('#f2eefc', '#3a2a5a'), black: ramp('#563596', '#180c33') },
+  { id: 'jade', name: 'Jade', white: ramp('#dff4e2', '#24402c'), black: ramp('#2f6e4f', '#0c2016') },
+];
+
+function tone(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f))));
+  return `#${[n >> 16, (n >> 8) & 255, n & 255].map((v) => ch(v).toString(16).padStart(2, '0')).join('')}`;
+}
+
 const GOLD = { deep: '#9c6a1c', shade: '#cf8f2a', base: '#f2b33d', light: '#f8cf6a', high: '#fff2b8' };
 
 /** RGBA pixels of one piece. */
-export function renderPiece(role: Role, color: 'white' | 'black'): Uint8ClampedArray {
+export function renderPiece(role: Role, color: 'white' | 'black', set: PieceSetId = 'classic'): Uint8ClampedArray {
   const N = PIECE_SIZE;
   const d = DESIGNS[role];
   const at = (f: Shape | undefined, x: number, y: number) => !!f && f((x + 0.5) / S, (y + 0.5) / S);
@@ -96,7 +127,7 @@ export function renderPiece(role: Role, color: 'white' | 'black'): Uint8ClampedA
     out[i + 2] = parseInt(hex.slice(5, 7), 16);
     out[i + 3] = 255;
   };
-  const c = COLORS[color];
+  const c = (PIECE_SETS.find((p) => p.id === set) ?? PIECE_SETS[0])[color];
   const R = 4;
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++) {
@@ -134,9 +165,11 @@ export function renderPiece(role: Role, color: 'white' | 'black'): Uint8ClampedA
 }
 
 const cache = new Map<string, string>();
+let currentSet: PieceSetId = 'classic';
+
 /** A PNG data URL of the piece (browser only; empty string elsewhere). */
-export function pieceDataUrl(role: Role, color: 'white' | 'black'): string {
-  const key = role + color;
+export function pieceDataUrl(role: Role, color: 'white' | 'black', set: PieceSetId = currentSet): string {
+  const key = role + color + set;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
   if (typeof document === 'undefined') return '';
@@ -144,7 +177,7 @@ export function pieceDataUrl(role: Role, color: 'white' | 'black'): string {
   canvas.width = canvas.height = PIECE_SIZE;
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
-  ctx.putImageData(new ImageData(renderPiece(role, color) as Uint8ClampedArray<ArrayBuffer>, PIECE_SIZE, PIECE_SIZE), 0, 0);
+  ctx.putImageData(new ImageData(renderPiece(role, color, set) as Uint8ClampedArray<ArrayBuffer>, PIECE_SIZE, PIECE_SIZE), 0, 0);
   const url = canvas.toDataURL('image/png');
   cache.set(key, url);
   return url;
@@ -153,6 +186,22 @@ export function pieceDataUrl(role: Role, color: 'white' | 'black'): string {
 export const ROLES: Role[] = ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'];
 
 /** CSS that gives chessground these pieces. */
-export function piecesCss(): string {
-  return ROLES.flatMap((r) => (['white', 'black'] as const).map((c) => `.cg-wrap piece.${r}.${c}{background-image:url("${pieceDataUrl(r, c)}")}`)).join('\n');
+export function piecesCss(set: PieceSetId = currentSet): string {
+  return ROLES.flatMap((r) => (['white', 'black'] as const).map((c) => `.cg-wrap piece.${r}.${c}{background-image:url("${pieceDataUrl(r, c, set)}")}`)).join('\n');
+}
+
+/** Switches the pieces on every board (and in captured-piece rows drawn from now on). */
+export function applyPieceSet(set: PieceSetId) {
+  if (typeof document === 'undefined') return;
+  currentSet = set;
+  let el = document.getElementById('pieces-css');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'pieces-css';
+    document.head.append(el);
+  }
+  if (el.dataset.set !== set) {
+    el.textContent = piecesCss(set);
+    el.dataset.set = set;
+  }
 }

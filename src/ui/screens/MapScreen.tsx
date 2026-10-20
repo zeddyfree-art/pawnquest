@@ -6,11 +6,11 @@ import { autoMatch } from '../../game/matchmaking';
 import { characterRecord } from '../../game/progress';
 import { skulls } from '../../game/rating';
 import { useSave } from '../../store/save';
-import { CrownIcon, Portrait, Skulls } from '../components';
+import { CrownIcon, HeroSprite, Portrait, Skulls } from '../components';
 import { useNav } from '../nav';
 
 export function MapScreen() {
-  const { rating, history, active } = useSave();
+  const { rating, history, active, hero } = useSave();
   const challenge = useNav((s) => s.challenge);
   const go = useNav((s) => s.go);
   const ranks = useMemo(() => [...new Set(CHARACTERS.map((c) => c.rating))].sort((a, b) => b - a), []);
@@ -63,8 +63,9 @@ export function MapScreen() {
                         </span>
                       </button>
                       {r === here && (
-                        <span className="you-marker" aria-label={`You are here: ${rating}`}>
-                          YOU {rating}
+                        <span className="you-here" aria-label={`You are here: ${rating}`}>
+                          {hero && <HeroSprite hero={hero} size={64} />}
+                          <span className="you-marker">{hero?.name ?? 'You'}</span>
                         </span>
                       )}
                     </div>

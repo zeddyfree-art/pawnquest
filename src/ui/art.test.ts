@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../data/characters';
 import { LOOKS } from '../data/looks';
 import { BOARD_THEMES, REGION_BOARD, renderBoard } from './boards';
-import { PIECE_SIZE, renderPiece, ROLES } from './pieces';
+import { PIECE_SETS, PIECE_SIZE, renderPiece, ROLES } from './pieces';
+import { EYES, HAIR_COLORS, HAIR_STYLES, ITEMS, PETS, SKINS } from '../data/gear';
+import { renderHero, renderPet, type Outfit } from './hero';
 import { BUST_SIZE, renderBust } from './portraits';
 
 describe('art drawn in code', () => {
@@ -38,5 +40,27 @@ describe('art drawn in code', () => {
       }
       expect(renderBust(look, 'idle')).not.toEqual(renderBust(look, 'defeated'));
     }
+  });
+});
+
+describe('the hero', () => {
+  const look = { skin: SKINS[2], hair: HAIR_COLORS[0].color, hairStyle: 'messy' as const, eyes: EYES[0] };
+  it('every item changes how the hero looks, and has an icon', () => {
+    const bare = renderHero(look, {});
+    for (const it of ITEMS) {
+      const worn = renderHero(look, { [it.art.slot]: it.art } as Outfit);
+      expect(worn, it.id).not.toEqual(bare);
+      const icon = renderHero(look, { [it.art.slot]: it.art } as Outfit, { only: it.art.slot });
+      expect(icon.filter(Boolean).length, it.id).toBeGreaterThan(4);
+    }
+  });
+  it('every hair style and pet draws', () => {
+    const seen = new Set<string>();
+    for (const h of HAIR_STYLES) seen.add(renderHero({ ...look, hairStyle: h.id }, {}).join());
+    expect(seen.size).toBe(HAIR_STYLES.length);
+    for (const p of PETS) expect(renderPet(p.id).filter(Boolean).length, p.id).toBeGreaterThan(30);
+  });
+  it('every piece set draws both colours', () => {
+    for (const s of PIECE_SETS) expect(renderPiece('queen', 'white', s.id)).not.toEqual(renderPiece('queen', 'black', s.id));
   });
 });

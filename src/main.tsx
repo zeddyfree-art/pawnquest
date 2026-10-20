@@ -7,11 +7,10 @@ import '@fontsource/nunito/800.css';
 import '@lichess-org/chessground/assets/chessground.base.css';
 import './styles.css';
 import { App } from './App';
-import { piecesCss } from './ui/pieces';
 import { boardsCss } from './ui/boards';
 
 const style = document.createElement('style');
-style.textContent = piecesCss() + '\n' + boardsCss();
+style.textContent = boardsCss();
 document.head.append(style);
 
 createRoot(document.getElementById('root')!).render(<App />);

@@ -10,8 +10,8 @@ made); this page is updated once they are in.
 | 1–2 | Playable core, roster of 32, opening books, auto-match, crowns | done (v0.1) |
 | 3 | Game review: accuracy, labels, plain-English key moments, Maia insights, Try again | done (v0.2) |
 | 4a | Style "cozy valley", 64px pieces, a board per region, backdrops with ambience, portraits of all 32 characters in four moods | done (v0.3) |
-| 4b | Your character (class and look, six gear slots: head, face, body, legs, main hand, off hand, plus a pet); each opponent gives its own item on your first win; quests unlock boards, piece sets and pets | next |
-| 4c | The world: a drawn map with a path, a backdrop and ambience per region (rain in the Gutter, fireflies in the Wilds, embers in the Underworld), optional music per region; installable PWA and offline play | planned |
+| 4b | Your character (class and look, six gear slots: head, face, body, legs, main hand, off hand, plus a pet); each opponent gives its own item on your first win; 22 quests unlock boards, seven piece sets and ten pets; hair styles and colours unlock with levels | done (v0.4) |
+| 4c | The world: a drawn map with a path, a backdrop and ambience per region (rain in the Gutter, fireflies in the Wilds, embers in the Underworld), optional music per region; installable PWA and offline play | next |
 | 5 | Calibration of the whole ladder (bot vs bot, then real players 400–1200) | planned |
 | 6 | Android, link with the repertoire app, more piece sets | later |
 

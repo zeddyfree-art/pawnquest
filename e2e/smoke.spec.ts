@@ -13,10 +13,19 @@ async function move(page: Page, from: string, to: string, side: 'white' | 'black
   await page.mouse.click(at(to).x, at(to).y);
 }
 
+/** A fresh save starts with making a hero. */
+async function start(page: Page) {
+  await page.goto('/');
+  await page.getByLabel('Name').fill('Tester');
+  await page.getByRole('radio', { name: /Ranger/ }).click();
+  await page.getByRole('button', { name: 'Begin your quest' }).click();
+  await expect(page.locator('.map')).toBeVisible();
+}
+
 test('play a game against the auto-matched opponent, resign, and keep the rating after a reload', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('/');
+  await start(page);
   await page.getByRole('button', { name: 'Play' }).click();
   await expect(page.getByText('WIN')).toBeVisible();
   await page.getByRole('button', { name: 'Fight!' }).click();
@@ -36,8 +45,8 @@ test('play a game against the auto-matched opponent, resign, and keep the rating
 });
 
 test('a stronger opponent (79M model) plays its book as White', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Heroes' }).click();
+  await start(page);
+  await page.getByRole('button', { name: 'Rivals' }).click();
   await page.getByRole('button', { name: /Sir Cedric/ }).click();
   await page.getByRole('radio', { name: 'Black' }).click();
   await page.getByRole('button', { name: 'Fight!' }).click();
@@ -47,7 +56,7 @@ test('a stronger opponent (79M model) plays its book as White', async ({ page })
 });
 
 test('after a game, the review explains the key moments and "Try again" starts from one', async ({ page }) => {
-  await page.goto('/');
+  await start(page);
   await page.getByRole('button', { name: 'Play' }).click();
   await page.getByRole('button', { name: 'Fight!' }).click();
   const hint = page.locator('.turn-hint');
