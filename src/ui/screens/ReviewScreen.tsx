@@ -1,7 +1,7 @@
 // The game review: accuracy, how your moves were labelled, the evaluation over the game, and the key moments
 // explained in plain English, each with the better move on the board and a "Try again" from that position.
 import { useEffect, useMemo, useState } from 'react';
-import { characterById, FACTIONS } from '../../data/characters';
+import { characterById, FACTIONS, shortName } from '../../data/characters';
 import { maiaPredict } from '../../engine/maia';
 import { engine } from '../../engine/stockfish';
 import { posFromFen, replay, START_FEN, uciToSan, type Side } from '../../game/chess';
@@ -10,6 +10,7 @@ import { formatEval, LABEL_INFO, LABELS, moverOf, winPct } from '../../review/cl
 import { explain, maiaInsights, moveNo } from '../../review/explain';
 import { useSave } from '../../store/save';
 import { Board, type Arrow } from '../Board';
+import { REGION_BOARD } from '../boards';
 import { Portrait } from '../components';
 import { useNav } from '../nav';
 
@@ -95,7 +96,7 @@ export function ReviewScreen() {
 
       <div className="panel review-top">
         <AccuracyRing value={review.accuracy[me]} label="You" />
-        <AccuracyRing value={review.accuracy[me === 'white' ? 'black' : 'white']} label={c.name.split(/[ ,]/)[0]} small color={FACTIONS[c.faction].color} />
+        <AccuracyRing value={review.accuracy[me === 'white' ? 'black' : 'white']} label={shortName(c.name)} small color={FACTIONS[c.faction].color} />
         <div className="label-counts">
           {LABELS.map((l) => (
             <span key={l} className="label-chip" style={{ ['--lc' as string]: LABEL_INFO[l].color }}>
@@ -105,7 +106,7 @@ export function ReviewScreen() {
         </div>
       </div>
 
-      <MovePane review={review} record={record} ply={selected} setPly={setPly} first={first} />
+      <MovePane review={review} record={record} ply={selected} setPly={setPly} first={first} theme={REGION_BOARD[c.world]} />
 
       <div className="panel">
         <h2>The game at a glance</h2>
@@ -164,7 +165,8 @@ export function ReviewScreen() {
 }
 
 /** The board at the selected move, with the move played and the better one as arrows, and buttons to step through. */
-function MovePane({ review, record, ply, setPly, first }: { review: GameReview; record: { moves: string[]; startFen?: string; color: Side }; ply: number; setPly: (p: number) => void; first: Side }) {
+function MovePane({ review, record, ply, setPly, first, theme }: { review: GameReview; record: { moves: string[]; startFen?: string; color: Side }; ply: number; setPly: (p: number) => void; first: Side; theme: string }) {
+  const setting = useSave((s) => s.settings.boardTheme);
   const r = useMemo(() => replay(record.moves.slice(0, ply), record.startFen ?? START_FEN), [record, ply]);
   const played = record.moves[ply];
   const label = review.labels[ply];
@@ -180,7 +182,7 @@ function MovePane({ review, record, ply, setPly, first }: { review: GameReview; 
   const n = record.moves.length;
   return (
     <div className="panel move-pane">
-      <div className="review-board">
+      <div className={`review-board board-theme-${setting === 'region' ? theme : setting}`}>
         <Board pos={r.pos} orientation={record.color} movable={false} lastMove={last ? [last.slice(0, 2), last.slice(2, 4)] : null} arrows={arrows} />
       </div>
       <div className="move-line">

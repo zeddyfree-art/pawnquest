@@ -2,7 +2,7 @@
 // The bot thinks in the Maia worker; its fake think time comes off its own clock.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CLOCK } from '../../config';
-import { characterById, REACTIONS, type Character } from '../../data/characters';
+import { characterById, REACTIONS, shortName, type Character } from '../../data/characters';
 import { acceptsDraw, chooseBotMove, shouldResign, thinkTimeMs } from '../../engine/botPlayer';
 import { loadModel, maiaPredict, MODELS, useMaia } from '../../engine/maia';
 import { captured, materialBalance, needsPromotion, other, replay, uciFromBoard, type Side } from '../../game/chess';
@@ -10,9 +10,11 @@ import { flagged, press, runFor, showTime, stop, timeLeft } from '../../game/clo
 import { boardResult, timeoutResult, type Result } from '../../game/rules';
 import { useSave } from '../../store/save';
 import { Board } from '../Board';
+import { REGION_BOARD } from '../boards';
+import { Scene } from '../Scene';
 import { Material, Portrait, type Mood } from '../components';
 import { useNav } from '../nav';
-import { pieceDataUrl } from '../pixelArt';
+import { pieceDataUrl } from '../pieces';
 import { sfx } from '../sound';
 
 const INC = CLOCK.incrementSeconds * 1000;
@@ -26,6 +28,7 @@ export function Battle() {
   const active = useSave((s) => s.active);
   const rating = useSave((s) => s.rating);
   const motion = useSave((s) => s.settings.motion);
+  const themeSetting = useSave((s) => s.settings.boardTheme);
   const { updateActive, finishGame } = useSave.getState();
   const go = useNav((s) => s.go);
   const c = active ? characterById(active.characterId) : undefined;
@@ -229,6 +232,7 @@ export function Battle() {
     modelStatus === 'downloading' ? `Summoning your opponent… ${progress}%` : 'Summoning your opponent…';
 
   return (
+    <Scene world={c.world} motion={motion}>
     <div className="battle">
       <div className="fighter foe">
         <Portrait character={c} size={44} mood={mood} />
@@ -240,7 +244,7 @@ export function Battle() {
         <span className={`clock${active.clock.running === botSide ? ' running' : ''}${clockOf(botSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(botSide))}</span>
       </div>
 
-      <div className={`board-wrap${shake ? ' shake' : ''}`}>
+      <div className={`board-wrap board-theme-${themeSetting === 'region' ? REGION_BOARD[c.world] : themeSetting}${shake ? ' shake' : ''}`}>
         <Board pos={r.pos} orientation={playerSide} movable={ready && playerTurn && !ended.current && !promo} lastMove={r.lastMove} onMove={onMove} />
         {bubble && ready && (
           <p className="bubble speech" aria-live="polite" onClick={() => setBubble('')}>
@@ -293,7 +297,7 @@ export function Battle() {
           <small>{rating}</small>
           <Material roles={taken[playerSide]} color={botSide} plus={balance} />
         </div>
-        <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : `${c.name.split(/[ ,]/)[0]} is thinking…`) : ''}</span>
+        <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : `${shortName(c.name)} is thinking…`) : ''}</span>
         <span className={`clock${active.clock.running === playerSide ? ' running' : ''}${clockOf(playerSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(playerSide))}</span>
       </div>
 
@@ -331,5 +335,6 @@ export function Battle() {
         </ol>
       )}
     </div>
+    </Scene>
   );
 }

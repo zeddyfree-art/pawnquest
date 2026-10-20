@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
 import { characterById } from '../../data/characters';
+import { BOARD_THEMES, type BoardThemeId } from '../boards';
 import { useNav } from '../nav';
 
 function RatingChart({ points }: { points: number[] }) {
@@ -115,7 +116,18 @@ export function ProfileScreen() {
           <input type="checkbox" checked={settings.sound} onChange={(e) => setSettings({ sound: e.target.checked })} /> Sound effects
         </label>
         <label>
-          <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Screen shake on check
+          <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Motion (ambient effects, screen shake on check)
+        </label>
+        <label>
+          Board{' '}
+          <select value={settings.boardTheme} onChange={(e) => setSettings({ boardTheme: e.target.value as 'region' | BoardThemeId })}>
+            <option value="region">The region's own board</option>
+            {BOARD_THEMES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
         </label>
       </div>
       <div className="panel">

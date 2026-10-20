@@ -9,8 +9,8 @@ made); this page is updated once they are in.
 | 0 | Engine spike, calibration concept | done |
 | 1–2 | Playable core, roster of 32, opening books, auto-match, crowns | done (v0.1) |
 | 3 | Game review: accuracy, labels, plain-English key moments, Maia insights, Try again | done (v0.2) |
-| 4a | Style, pieces and boards: the chosen style direction, new default pieces, 2–3 board themes, portraits of the first worlds with four expressions | next |
-| 4b | Your character and unlocks: a character creator, shown on the map and in fights; unlocks (board themes, piece sets, gear, pets, titles, victory effects) earned by playing | planned |
+| 4a | Style "cozy valley", 64px pieces, a board per region, backdrops with ambience, portraits of all 32 characters in four moods | done (v0.3) |
+| 4b | Your character (class and look, six gear slots: head, face, body, legs, main hand, off hand, plus a pet); each opponent gives its own item on your first win; quests unlock boards, piece sets and pets | next |
 | 4c | The world: a drawn map with a path, a backdrop and ambience per region (rain in the Gutter, fireflies in the Wilds, embers in the Underworld), optional music per region; installable PWA and offline play | planned |
 | 5 | Calibration of the whole ladder (bot vs bot, then real players 400–1200) | planned |
 | 6 | Android, link with the repertoire app, more piece sets | later |
@@ -22,6 +22,20 @@ made); this page is updated once they are in.
 - Unlockable board themes and piece sets.
 - Backgrounds that depend on the region you play in.
 - A real drawn map with the path visible on it.
+
+## Design choices (from the design brief, October 2026)
+
+| Question | Choice |
+| --- | --- |
+| Style | Cozy valley (warm, Stardew-like) |
+| Default pieces | Fine pixel art (64px) |
+| Your character | Class + look; six gear slots chosen by Claude: head, face, body, legs, main hand, off hand, plus a pet |
+| Earning | Quests + levels; also an item per opponent ("not only per level, but per character in that level") |
+| Unlocks | Board themes, piece sets, gear, pets |
+| Regions | Living backdrops (ambient animation) |
+| Map | A drawn path upwards |
+| Board in a fight | The region's own, can be changed |
+| Art | Drawn by Claude in code; CC0 music and sound from Ninja Adventure (pixel-boy) for the regions |
 
 ## Art production
 

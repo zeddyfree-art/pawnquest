@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+import { CHARACTERS } from '../data/characters';
+import { LOOKS } from '../data/looks';
+import { BOARD_THEMES, REGION_BOARD, renderBoard } from './boards';
+import { PIECE_SIZE, renderPiece, ROLES } from './pieces';
+import { BUST_SIZE, renderBust } from './portraits';
+
+describe('art drawn in code', () => {
+  it('every piece fills a good part of its 64×64 square, with an outline', () => {
+    for (const r of ROLES)
+      for (const c of ['white', 'black'] as const) {
+        const px = renderPiece(r, c);
+        expect(px.length).toBe(PIECE_SIZE * PIECE_SIZE * 4);
+        let opaque = 0;
+        for (let i = 3; i < px.length; i += 4) if (px[i]) opaque++;
+        expect(opaque / (PIECE_SIZE * PIECE_SIZE), `${c} ${r}`).toBeGreaterThan(0.18);
+      }
+  });
+  it('every region has a board, and a1 is a dark square', () => {
+    for (const id of Object.values(REGION_BOARD)) expect(BOARD_THEMES.some((t) => t.id === id)).toBe(true);
+    for (const t of BOARD_THEMES) {
+      const px = renderBoard(t);
+      const lum = (x: number, y: number) => {
+        const i = (y * 256 + x) * 4;
+        return px[i] + px[i + 1] + px[i + 2];
+      };
+      expect(lum(16, 256 - 16), t.id).toBeLessThan(lum(48, 256 - 16)); // a1 darker than b1
+    }
+  });
+  it('every character has a portrait in all four moods', () => {
+    for (const c of CHARACTERS) {
+      const look = LOOKS[c.id];
+      expect(look, c.id).toBeDefined();
+      for (const mood of ['idle', 'thinking', 'smug', 'defeated'] as const) {
+        const px = renderBust(look, mood);
+        expect(px.length).toBe(BUST_SIZE * BUST_SIZE);
+        expect(px.every((p) => p !== null)).toBe(true);
+      }
+      expect(renderBust(look, 'idle')).not.toEqual(renderBust(look, 'defeated'));
+    }
+  });
+});

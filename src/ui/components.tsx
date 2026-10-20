@@ -1,24 +1,24 @@
 import { useEffect, useRef } from 'react';
 import { FACTIONS, type Character } from '../data/characters';
 import type { Crown } from '../game/progress';
-import { drawPortrait, pieceDataUrl } from './pixelArt';
+import { drawPortrait } from './pixelArt';
+import { bustUrl, type Mood } from './portraits';
+import { LOOKS } from '../data/looks';
+import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
 
-export type Mood = 'idle' | 'thinking' | 'smug' | 'defeated';
+export type { Mood };
 
 export function Portrait({ character, size = 64, mood = 'idle', locked = false }: { character: Character; size?: number; mood?: Mood; locked?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const look = LOOKS[character.id];
   useEffect(() => {
-    if (ref.current) drawPortrait(ref.current, character.name, character.faction);
-  }, [character]);
-  return (
-    <canvas
-      ref={ref}
-      className={`portrait mood-${mood}${locked ? ' locked' : ''}`}
-      style={{ width: size, height: size, ['--fc' as string]: FACTIONS[character.faction].color }}
-      aria-hidden="true"
-    />
-  );
+    if (!look && ref.current) drawPortrait(ref.current, character.name, character.faction);
+  }, [character, look]);
+  const cls = `portrait mood-${mood}${locked ? ' locked' : ''}`;
+  const style = { width: size, height: size, ['--fc' as string]: FACTIONS[character.faction].color };
+  if (look) return <img className={cls} style={style} src={bustUrl(character.id, look, mood)} alt="" aria-hidden="true" />;
+  return <canvas ref={ref} className={cls} style={style} aria-hidden="true" />;
 }
 
 export function FactionBadge({ character }: { character: Character }) {

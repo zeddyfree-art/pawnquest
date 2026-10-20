@@ -145,6 +145,9 @@ export const CHARACTERS: Character[] = ROWS.map(([id, name, rating, faction, tem
 
 export const characterById = (id: string) => CHARACTERS.find((c) => c.id === id);
 
+/** A short name for tight places: "Pip the Pickpocket" → "Pip", "Sir Cedric, Knight Errant" → "Sir Cedric", "The Lich" → "Lich". */
+export const shortName = (name: string) => name.replace(/^The /, '').split(/,| the /)[0].split(' ').slice(0, 2).join(' ');
+
 /** Short reactions during the game, per faction (family-friendly). */
 export const REACTIONS: Record<Faction, Record<'capture' | 'check' | 'losing' | 'win' | 'loss' | 'draw', string[]>> = {
   gambiteer: {
