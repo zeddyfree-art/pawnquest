@@ -1,6 +1,7 @@
 // Chiptune sound effects synthesised on the fly (no audio files): a thud for a move, a puff for a capture,
-// a two-note alarm for check, short jingles for the result.
+// a two-note alarm for check; the result jingles come from the music pack (see music.ts) when it is there.
 import { useSave } from '../store/save';
+import { jingle } from './music';
 
 let ctx: AudioContext | null = null;
 function audio(): AudioContext | null {
@@ -48,7 +49,8 @@ export const sfx = {
   capture: () => (noise(0.12), tone(90, 0, 0.1, 'triangle', 0.2)),
   check: () => (tone(880, 0, 0.08), tone(660, 0.09, 0.1)),
   start: () => [392, 523, 659].forEach((f, i) => tone(f, i * 0.09, 0.12)),
-  win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.18)),
-  lose: () => [392, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.22, 'triangle', 0.12)),
+  // The result jingles come from the music pack when it is there, else they are synthesised.
+  win: () => void jingle('win').then((ok) => ok || [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.11, 0.18))),
+  lose: () => void jingle('lose').then((ok) => ok || [392, 330, 262].forEach((f, i) => tone(f, i * 0.16, 0.22, 'triangle', 0.12))),
   draw: () => [440, 440].forEach((f, i) => tone(f, i * 0.15, 0.12, 'triangle', 0.12)),
 };

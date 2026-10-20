@@ -15,6 +15,8 @@ import { CreateHero } from './ui/screens/CreateHero';
 import { HeroScreen } from './ui/screens/HeroScreen';
 import { applyPieceSet } from './ui/pieces';
 import { PlayDock } from './ui/PlayDock';
+import { characterById } from './data/characters';
+import { refreshMusic, setTrack } from './ui/music';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -29,6 +31,8 @@ export function App() {
   const xp = useSave((s) => s.xp);
   const hasHero = useSave((s) => !!s.hero);
   const pieceSet = useSave((s) => s.settings.pieceSet);
+  const music = useSave((s) => `${s.settings.music}:${s.settings.musicVolume}`);
+  const fightWorld = useSave((s) => (s.active ? characterById(s.active.characterId)?.world : undefined));
   const { screen, go } = useNav();
 
   const updateAvailable = useUpdate((s) => s.available);
@@ -36,6 +40,12 @@ export function App() {
     void loadSave();
     initUpdateCheck();
   }, []);
+
+  // The map tune everywhere, the region's tune in a fight, quiet on the result (its jingle plays).
+  useEffect(() => {
+    setTrack(screen === 'result' ? null : screen === 'battle' && fightWorld ? fightWorld : 'map');
+  }, [screen, fightWorld]);
+  useEffect(() => refreshMusic(), [music]);
 
   if (!loaded) return <div className="splash pixel">Pawnquest</div>;
   applyPieceSet(pieceSet);

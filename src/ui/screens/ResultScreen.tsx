@@ -10,6 +10,7 @@ import { itemById } from '../../data/gear';
 import { QUESTS } from '../../game/unlocks';
 import { GearIcon, HeroSprite } from '../components';
 import { RewardIcon, rewardName } from './HeroScreen';
+import { jingle } from '../music';
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -22,6 +23,13 @@ export function ResultScreen() {
   const rec = last?.record;
   const c = rec && characterById(rec.characterId);
   const [shown, setShown] = useState(rec?.ratingBefore ?? 0);
+
+  // A jingle for new gear or a completed quest, after the result's own.
+  useEffect(() => {
+    if (!last || (!last.newItems.length && !last.newQuests.length)) return;
+    const t = setTimeout(() => void jingle('reward'), 1500);
+    return () => clearTimeout(t);
+  }, [last]);
 
   // The rating counts up (or down) to its new value.
   useEffect(() => {

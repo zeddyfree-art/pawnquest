@@ -443,3 +443,4 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 .sheet-head h2 { margin: 0; }
 .sheet-head p { margin: 2px 0 0; }
 .sheet .rank-cards { margin-top: 12px; }
+.settings .range { display: grid; gap: 4px; max-width: 320px; }
