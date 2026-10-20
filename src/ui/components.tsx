@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { FACTIONS, type Character } from '../data/characters';
 import type { Crown } from '../game/progress';
 import { drawPortrait } from './pixelArt';
-import { bustUrl, type Mood } from './portraits';
+import { BUST_SIZE, bustUrl, type Mood } from './portraits';
 import { LOOKS } from '../data/looks';
 import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
@@ -18,7 +18,9 @@ export function Portrait({ character, size = 64, mood = 'idle', locked = false }
     if (!look && ref.current) drawPortrait(ref.current, character.name, character.faction);
   }, [character, look]);
   const cls = `portrait mood-${mood}${locked ? ' locked' : ''}`;
-  const style = { width: size, height: size, ['--fc' as string]: FACTIONS[character.faction].color };
+  // Whole multiples of the 40-pixel art keep every pixel the same size (sharp, never smeared).
+  const px = look ? Math.max(1, Math.round(size / BUST_SIZE)) * BUST_SIZE : size;
+  const style = { width: px, height: px, ['--fc' as string]: FACTIONS[character.faction].color };
   if (look) return <img className={cls} style={style} src={bustUrl(character.id, look, mood)} alt="" aria-hidden="true" />;
   return <canvas ref={ref} className={cls} style={style} aria-hidden="true" />;
 }
@@ -45,14 +47,21 @@ export function CrownIcon({ crown, size = 16 }: { crown: Crown; size?: number })
   );
 }
 
-export function Skulls({ n }: { n: number }) {
+/** A little pixel skull: X outline, o bone, K eye sockets and nose. */
+const SKULL = ['..XXXXX..', '.XoooooX.', 'XoooooooX', 'XoKKoKKoX', 'XoKKoKKoX', 'XoooooooX', '.XooKooX.', '..XoXoX..', '..XXXXX..'];
+const skullRects = (ch: string) => SKULL.flatMap((row, y) => [...row].map((c, x) => (c === ch ? `M${x} ${y}h1v1h-1z` : ''))).join('');
+const SKULL_LINE = skullRects('X') + skullRects('K');
+const SKULL_BONE = skullRects('o');
+
+/** Risk as 1 to 3 skulls (how far the opponent is above you); "No risk" when they are not. */
+export function Skulls({ n, size = 18 }: { n: number; size?: number }) {
   if (!n) return <span className="skulls none">No risk</span>;
   return (
-    <span className="skulls" role="img" aria-label={`${n} of 3 skulls`}>
-      {[1, 2, 3].map((i) => (
-        <svg key={i} width="18" height="18" viewBox="0 0 8 8" shapeRendering="crispEdges" className={i <= n ? 'on' : 'off'}>
-          <path d="M2 0h4v1h1v3H6v1H5v2H3V5H2V4H1V1h1z" fill="currentColor" />
-          <path d="M2 2h1v1H2zM5 2h1v1H5z" fill="#181425" />
+    <span className="skulls" role="img" aria-label={`Risk: ${n} of 3 skulls`}>
+      {Array.from({ length: n }, (_, i) => (
+        <svg key={i} width={size} height={size} viewBox="0 0 9 9" shapeRendering="crispEdges" aria-hidden="true">
+          <path d={SKULL_BONE} fill="#f4ead6" />
+          <path d={SKULL_LINE} fill="#3b2617" />
         </svg>
       ))}
     </span>
