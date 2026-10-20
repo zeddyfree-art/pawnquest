@@ -25,7 +25,7 @@ export interface GameRecord {
   startFen?: string;
   /** Not rated, not in the history. */
   practice?: boolean;
-  /** In the history but did not change the rating (training grounds). */
+  /** In the history but did not change the rating (training games in v0.5). */
   unrated?: boolean;
 }
 

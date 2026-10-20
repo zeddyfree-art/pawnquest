@@ -46,7 +46,16 @@ export function Board({ pos, orientation, movable, lastMove, onMove, arrows }: P
       movable: { free: false, showDests: true, events: { after: (o, d) => onMoveRef.current?.(o, d) } },
       premovable: { enabled: false },
     });
-    return () => api.current?.destroy();
+    // Chessground remembers where the board is and only measures again on scroll or resize; when something
+    // above it changes height the board moves without either, and a tap would land on the square below. So it
+    // measures again at the start of every touch or click.
+    const wrap = el.current;
+    const remeasure = () => api.current?.state.dom.bounds.clear();
+    for (const ev of ['mousedown', 'touchstart'] as const) wrap.addEventListener(ev, remeasure, { capture: true, passive: true });
+    return () => {
+      for (const ev of ['mousedown', 'touchstart'] as const) wrap.removeEventListener(ev, remeasure, { capture: true });
+      api.current?.destroy();
+    };
   }, []);
 
   useEffect(() => {
