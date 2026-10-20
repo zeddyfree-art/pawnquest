@@ -47,7 +47,8 @@ export function Battle() {
   const saidLosing = useRef(false);
 
   const moves = active?.moves ?? [];
-  const r = useMemo(() => replay(moves), [moves]);
+  const startFen = active?.startFen;
+  const r = useMemo(() => replay(moves, startFen), [moves, startFen]);
   const playerSide: Side = active?.color ?? 'white';
   const botSide = other(playerSide);
   const playerTurn = r.pos.turn === playerSide;
@@ -127,7 +128,7 @@ export function Battle() {
       setNow(n);
       const a = useSave.getState().active;
       const side = a && flagged(a.clock, n);
-      if (a && side) finish(timeoutResult(replay(a.moves).pos, side));
+      if (a && side) finish(timeoutResult(replay(a.moves, a.startFen).pos, side));
     }, 200);
     return () => clearInterval(t);
   }, [ready, finish]);
@@ -142,7 +143,7 @@ export function Battle() {
     const started = Date.now();
     (async () => {
       try {
-        const bm = await chooseBotMove(c, before, rating, maiaPredict);
+        const bm = await chooseBotMove(c, before, rating, maiaPredict, Math.random, active.startFen);
         if (!bm) return;
         const chances = [...active.botWinChances, bm.winChance];
         if (shouldResign(c, chances)) {
@@ -159,7 +160,7 @@ export function Battle() {
         const a = useSave.getState().active;
         if (!a || a.id !== gameId || a.moves.length !== before.length || ended.current) return;
         const after = [...a.moves, bm.uci];
-        const san = replay(after).sans[after.length - 1];
+        const san = replay(after, a.startFen).sans[after.length - 1];
         updateActive({ moves: after, clock: press(a.clock, botSide, Date.now(), INC), botWinChances: chances });
         effects(san);
         if (san.includes('+') || san.includes('#')) setBubble(line(c, 'check'));
@@ -169,7 +170,7 @@ export function Battle() {
           setBubble(line(c, 'losing'));
         }
         setMood(bm.winChance > 0.75 ? 'smug' : bm.winChance < 0.2 ? 'defeated' : 'idle');
-        const end = boardResult(after);
+        const end = boardResult(after, a.startFen);
         if (end) {
           await sleep(700);
           finish(end);
@@ -197,10 +198,10 @@ export function Battle() {
     const a = useSave.getState().active;
     if (!uci || !a || ended.current) return;
     const after = [...a.moves, uci];
-    const san = replay(after).sans[after.length - 1];
+    const san = replay(after, a.startFen).sans[after.length - 1];
     updateActive({ moves: after, clock: press(a.clock, playerSide, Date.now(), INC) });
     effects(san);
-    const end = boardResult(after);
+    const end = boardResult(after, a.startFen);
     if (end) setTimeout(() => finish(end), 500);
   };
 

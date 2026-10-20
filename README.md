@@ -4,10 +4,10 @@ Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3)
 Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
 your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: **first playable version (v0.1)**. See [docs/brief.md](docs/brief.md) for the plan and
+Status: **v0.2: game review**. See [docs/brief.md](docs/brief.md) for the plan and
 [docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
 
-## What is in v0.1
+## What is in it
 
 - **World map**: a quest path through 7 worlds, 32 opponents (3 factions per rank), your position on it, and a
   **Play** button that picks a fitting opponent (a bit above you, a bit below after three losses in a row, factions
@@ -21,9 +21,18 @@ Status: **first playable version (v0.1)**. See [docs/brief.md](docs/brief.md) fo
 - **Rating**: Elo against fixed-rating bots, K = 40 for the first 20 games then 24, floor 400.
 - **Progress**: crowns per opponent (bronze, silver, gold at 1, 3, 5 wins), Hall of Heroes, faction scores, XP and
   levels, rating graph, save export/import.
+- **Game review** (v0.2): Stockfish 19 on your device checks every move.
+  - Accuracy (Lichess' formula) and labels from Brilliant to Blunder.
+  - An evaluation graph.
+  - Up to three key moments explained in plain English: hanging piece, missed or allowed mate, fork, pin, missed
+    capture, overlooked threat, or what the move cost.
+  - Maia insights: "Only 12% of 900-rated players find this move", "This is the most common mistake at your level",
+    "Players around 1400 usually see this".
+  - **Try again** replays the position against the same bot (not rated).
+- **Board** always fits the screen; captured pieces and the material difference are shown; clearer 32×32 pieces.
 
-Not yet: game review (phase 3), drawn portraits and more piece sets (phase 4), installable/offline PWA, full
-ladder calibration (phase 5).
+Next: the look and feel (phase 4, see [docs/roadmap.md](docs/roadmap.md)), installable/offline PWA, full ladder
+calibration (phase 5).
 
 ## Develop
 

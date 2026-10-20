@@ -35,14 +35,15 @@ export function effectiveSampling(c: Character): { temperature: number; topP: nu
   return { temperature: t.temperature * rankTemperatureFactor(c.rating), topP: t.topP };
 }
 
-export async function chooseBotMove(c: Character, moves: string[], playerRating: number, predict: Predict, rand: () => number = Math.random): Promise<BotMove | null> {
-  const r = replay(moves);
+/** `startFen`: the game started from another position ("Try again"); then the bot plays without its book. */
+export async function chooseBotMove(c: Character, moves: string[], playerRating: number, predict: Predict, rand: () => number = Math.random, startFen?: string): Promise<BotMove | null> {
+  const r = replay(moves, startFen);
   const legal = legalUcis(r.pos);
   if (!legal.length) return null;
   const botSide: Side = r.pos.turn;
   const pred = await predict({ fens: r.fens, selfElo: c.engineElo, oppoElo: playerRating, model: c.model });
 
-  const book = bookMoves(c, botSide, moves);
+  const book = startFen ? new Map<string, number>() : bookMoves(c, botSide, moves);
   const inBook = [...book.entries()].filter(([uci]) => legal.includes(uci));
   if (inBook.length) {
     // Maia's probability at this rating decides between the book's moves (a little floor so rare book moves still appear).

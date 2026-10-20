@@ -45,3 +45,26 @@ test('a stronger opponent (79M model) plays its book as White', async ({ page })
   await page.getByRole('button', { name: 'Moves' }).click();
   await expect(page.locator('.move-list li').first()).toHaveText(/^e4/);
 });
+
+test('after a game, the review explains the key moments and "Try again" starts from one', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Play' }).click();
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  const hint = page.locator('.turn-hint');
+  await expect(hint).toHaveText('Your move', { timeout: 90_000 });
+  // 1.f3 and 2.g4 are bad moves: the review has something to say.
+  await move(page, 'f2', 'f3');
+  await expect(hint).toHaveText('Your move');
+  await move(page, 'g2', 'g4');
+  await expect(page.locator('.turn-hint, .result').first()).toBeVisible();
+  if (!(await page.locator('.result').count())) {
+    await expect(hint).toHaveText('Your move');
+    await page.getByRole('button', { name: 'Resign' }).click();
+    await page.getByRole('button', { name: 'Yes, resign' }).click();
+  }
+  await page.getByRole('button', { name: 'Review' }).click();
+  await expect(page.locator('.review-top')).toBeVisible({ timeout: 90_000 });
+  await expect(page.locator('.moment').first()).toContainText('Better was');
+  await page.locator('.moment').first().getByRole('button', { name: 'Try again' }).click();
+  await expect(page.locator('.turn-hint')).toHaveText('Your move', { timeout: 60_000 });
+});
