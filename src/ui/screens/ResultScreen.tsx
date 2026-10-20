@@ -71,8 +71,8 @@ export function ResultScreen() {
           <Portrait character={c} size={96} mood={d.score === 1 ? 'defeated' : d.score === 0 ? 'smug' : 'idle'} />
         </div>
         <p className="bubble">“{lines[rec.id.length % lines.length]}”</p>
-        {rec.practice ? (
-          <p className="muted">Practice games from a review do not change your rating.</p>
+        {rec.practice || rec.unrated ? (
+          <p className="muted">{rec.practice ? 'Practice games from a review do not change your rating.' : 'Training games do not change your rating.'}</p>
         ) : (
           <div className="result-rating">
             <span className="pixel big-number">{shown}</span>

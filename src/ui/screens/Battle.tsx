@@ -1,4 +1,4 @@
-// The fight: the board, the opponent with a speech bubble above, you below, both clocks (15+10).
+// The fight: the board, the opponent (who speaks in a bubble beside their portrait), you below, both clocks (15+10).
 // The bot thinks in the Maia worker; its fake think time comes off its own clock.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CLOCK } from '../../config';
@@ -237,21 +237,22 @@ export function Battle() {
     <div className="battle">
       <div className="fighter foe">
         <Portrait character={c} size={44} mood={mood} />
-        <div className="fighter-info">
-          <b>{c.name}</b>
-          <small>{c.rating}</small>
-          <Material roles={taken[botSide]} color={playerSide} plus={-balance} />
-        </div>
+        {bubble && ready ? (
+          <p className="bubble speech" aria-live="polite" onClick={() => setBubble('')}>
+            {bubble}
+          </p>
+        ) : (
+          <div className="fighter-info">
+            <b>{c.name}</b>
+            <small>{c.rating}</small>
+            <Material roles={taken[botSide]} color={playerSide} plus={-balance} />
+          </div>
+        )}
         <span className={`clock${active.clock.running === botSide ? ' running' : ''}${clockOf(botSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(botSide))}</span>
       </div>
 
       <div className={`board-wrap board-theme-${themeSetting === 'region' ? REGION_BOARD[c.world] : themeSetting}${shake ? ' shake' : ''}`}>
         <Board pos={r.pos} orientation={playerSide} movable={ready && playerTurn && !ended.current && !promo} lastMove={r.lastMove} onMove={onMove} />
-        {bubble && ready && (
-          <p className="bubble speech" aria-live="polite" onClick={() => setBubble('')}>
-            {bubble}
-          </p>
-        )}
         {!ready && !error && (
           <div className="overlay">
             <p className="pixel">{loadingText}</p>

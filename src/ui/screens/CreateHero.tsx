@@ -32,7 +32,7 @@ export function CreateHero() {
     <div className="create">
       <h1>{existing ? 'Change your look' : 'Who goes on this quest?'}</h1>
       <div className="create-preview panel">
-        <HeroSprite hero={preview} size={192} />
+        <HeroSprite hero={preview} size={128} />
         <b className="pixel">{name.trim() || 'Hero'}</b>
         <small>{classById(cls).name}</small>
       </div>

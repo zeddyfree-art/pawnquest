@@ -4,7 +4,7 @@ Climb a ladder of pixel-art RPG characters, each a human-like chess bot (Maia-3)
 Straw Sam the Training Dummy (400) to the Necromancer King (2500). Free, open source, and everything runs on
 your device: no account, no tracking, your progress stays in your browser (with a save file to export).
 
-Status: **v0.4: your own hero**. See [docs/brief.md](docs/brief.md) for the plan and
+Status: **v0.5: the world map**. See [docs/brief.md](docs/brief.md) for the plan and
 [docs/phase0-concept.md](docs/phase0-concept.md) for how the bots work and how they were measured.
 
 ## What is in it
@@ -45,7 +45,12 @@ Status: **v0.4: your own hero**. See [docs/brief.md](docs/brief.md) for the plan
 
 All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portraits.ts`, `src/data/looks.ts`).
 
-Next: the drawn map, music per region and offline play (phase 4c). See [docs/roadmap.md](docs/roadmap.md).
+- **The world map** (v0.5): one tall pixel-art map drawn in code, with a winding path through every rank, region
+  signs, a moat in front of the castle and scenery per region; tap a stone to see who waits there.
+- **What to study** (v0.5): the profile sums up your reviewed games: the mistakes that come back most, the phase
+  of the game where you err most, and what to practise for each.
+
+Next: music per region, then (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Develop
 
