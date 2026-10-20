@@ -51,7 +51,28 @@ alone, every character from about 1800 up would feel the same.
   A small adapter lets `maia3-js` drive it (pad channel 97 with zeros, rename tensors).
 - About 100 ms per forward pass on one server thread, 3 s to load (*measured*). Phone: estimate 0.5–1.5 s a
   move, which fits a 15+10 game because the bot's fake think time is longer anyway.
-- Bot-vs-bot separation with 79M: running, results go into the roster artifact.
+- **int8 version** (onnxruntime dynamic quantisation, `tools/spike/quantize-int8.py`): 81.6 MB instead of
+  316 MB, 32 ms instead of 89 ms per pass, same top move as the full model in 95% of 127 game positions, mean
+  total-variation distance 0.026 between the two move distributions (*measured*).
+
+Bot vs bot with 79M (40 games per pair, or 60 for int8), temperature 1.0 unless noted, top-p 0.9:
+
+| Pair | Model | Lower side scored | Elo predicts |
+| --- | --- | --- | --- |
+| 600 vs 800 | 79M | 24% | 24% |
+| 1400 vs 1600 | 79M | 28% | 24% |
+| 1800 vs 2000 | 79M | 40% | 24% |
+| 2200 vs 2400 | 79M | 41% | 24% |
+| 2200 vs 2400 | 79M int8 | 40% | 24% |
+| 1800 (T 1.0) vs 2000 (T 0.8) | 79M int8 | 22% | 24% |
+| 2200 (T 1.0) vs 2400 (T 0.6) | 79M int8 | 25% | 24% |
+| 2200 (T 0.6) vs 2400 (T 0.3) | 79M int8 | 23% | 24% |
+
+**Conclusions.** 79M separates the middle of the ladder far better than 5M (1400–1600: 28% vs 41%). At the
+top, the rating input alone is not enough for either model, but lowering the temperature of the stronger side
+restores the expected gap. So the ladder needs a **temperature schedule by rank** (about 1.0 up to ~1600,
+falling towards 0.3–0.6 at 2400), with each temperament as an offset on that schedule, and int8 79M is the
+best engine candidate: 82 MB, faster than the full model, and it plays the same.
 
 ### Stockfish 19 lite single-threaded (`stockfish` npm 19.0.1)
 
@@ -117,8 +138,9 @@ each character's measured strength is within ±50 of its displayed rating.
    Straw Sam = 400. Each pair plays 100–200 games (±3.5–5% → about ±25–35 Elo).
 3. **Tuning loop:** for each character, adjust `engineElo` first (and `temperature` for the extremes)
    until its fitted rating matches its ladder rating; then re-run neighbours. Ranks are tuned bottom-up.
-4. **Top of the ladder:** compare 5M and 79M on 1800–2500. If 79M separates and 5M does not, those ranks use
-   79M (extra download when the player first enters The Wilds). Try an int8-quantised 79M (about 80 MB) too.
+4. **Model per rank:** 79M int8 (82 MB) wherever it plays measurably better; candidates are "79M int8
+   everywhere" (one engine, one download) or "5M for The Gutter and The Village, 79M int8 from The Castle up"
+   (fast first start). Decided by the full calibration plus a phone speed test.
 5. **Human check:** a few real games at 400–1200 (you, family, friends); adjust `blunderPct` at the bottom.
 
 Results appear in the roster artifact so they can be checked next to each character.
@@ -141,7 +163,7 @@ work and can be published as CC0. The pieces start from SpicyGame's CC0 16×16 s
 
 ## Next steps
 
-1. Finish the 79M comparison; publish the numbers.
+1. Measure 79M int8 and 5M speed in a real phone browser (onnxruntime-web, single thread).
 2. Scaffold the app (Vite + React + TypeScript + Zustand + chessground), port the Maia and Stockfish workers.
 3. `characters.ts` from the approved roster; faction opening trees.
 4. `tools/calibrate.ts` with the real bot pipeline; first full ladder calibration.
