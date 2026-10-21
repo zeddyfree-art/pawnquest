@@ -3,11 +3,11 @@
 // Solving it at the first try counts for "Second chance"; every solved puzzle counts for the puzzle book quests.
 import { useMemo, useState } from 'react';
 import { characterById } from '../../data/characters';
-import { engine } from '../../engine/stockfish';
-import { fenOf, moveFromUci, needsPromotion, posFromFen, uciFromBoard, uciToSan } from '../../game/chess';
+import { fenOf, moveFromUci, needsPromotion, posFromFen, replay, START_FEN, uciFromBoard, uciToSan } from '../../game/chess';
 import { QUESTS } from '../../game/unlocks';
 import { moveNo } from '../../review/explain';
 import { ideaHint, judgeMove, type Puzzle } from '../../review/puzzles';
+import { analyse, PRIORITY } from '../../review/reviewer';
 import { useSave } from '../../store/save';
 import { Board, type Arrow } from '../Board';
 import { REGION_BOARD } from '../boards';
@@ -39,18 +39,24 @@ export function PuzzleScreen() {
 
 function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next: (() => void) | null }) {
   const go = useNav((s) => s.go);
-  const { logPuzzle, settings } = useSave();
+  const { logPuzzle, settings, history } = useSave();
+  // The opponent's move that led to the position, from the game itself.
+  const prev = history.find((g) => g.id === p.gameId)?.moves[p.ply - 1];
   const c = characterById(p.characterId);
   const [state, setState] = useState<State>('try');
   const [tries, setTries] = useState(0);
   const [hints, setHints] = useState(0);
   const [moved, setMoved] = useState<string | null>(null);
   const [quests, setQuests] = useState<string[]>([]);
-  // A fresh position object after each try puts the board back.
-  const pos = useMemo(() => posFromFen(p.fen), [p.fen, tries]);
   const best = p.good[0];
   const playedSan = useMemo(() => uciToSan(posFromFen(p.fen), p.played), [p]);
   const finished = state === 'solved' || state === 'shown';
+  // Once solved (or shown), the board shows the position after the move; before that, a fresh position object
+  // after each try puts the board back.
+  const result = state === 'solved' ? moved : state === 'shown' ? best : null;
+  const pos = useMemo(() => posFromFen(result ? fenAfter(p.fen, result) : p.fen), [p.fen, tries, result]);
+  const lastMove: [string, string] | null = result ? [result.slice(0, 2), result.slice(2, 4)] : prev ? [prev.slice(0, 2), prev.slice(2, 4)] : null;
+  const follow = result && result === best && p.line ? lineSan(p.fen, p.line) : '';
 
   const finish = (solved: boolean, firstTry: boolean) => setQuests(logPuzzle(p.id, solved, firstTry));
 
@@ -61,7 +67,7 @@ function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next
     if (!uci) return;
     setMoved(uci);
     setState('checking');
-    const ok = await judgeMove(p, uci, fenAfter(p.fen, uci), async (fen) => (await engine.analyse(fen, { depth: 12 }))[0]);
+    const ok = await judgeMove(p, uci, fenAfter(p.fen, uci), async (fen) => (await analyse(fen, { depth: 12 }, PRIORITY.puzzle))[0]);
     if (ok) {
       setState('solved');
       finish(true, tries === 0 && hints < 3);
@@ -77,7 +83,6 @@ function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next
   };
 
   const arrows: Arrow[] = [];
-  if (finished && best) arrows.push({ from: best.slice(0, 2), to: best.slice(2, 4), brush: 'good' });
   const circles = !finished && hints >= 1 && best ? [{ square: best.slice(0, 2), brush: 'good' as const }] : undefined;
   const theme = settings.boardTheme === 'region' ? (c ? REGION_BOARD[c.world] : 'meadow') : settings.boardTheme;
   const movedSan = moved ? safeSan(p.fen, moved) : '';
@@ -87,10 +92,11 @@ function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next
       <h1>Find the better move</h1>
       <p className="muted">
         Puzzle {n} of {of} · from your game against {c?.name ?? 'an opponent'}, move {moveNo(p.ply)} You played {playedSan} here.
+        {prev && !finished && ` Their last move: ${safeSan(fenBefore(history.find((g) => g.id === p.gameId), p.ply - 1) ?? p.fen, prev)}.`}
       </p>
       <div className="panel puzzle-pane">
-        <div className={`review-board board-theme-${theme}`}>
-          <Board pos={pos} orientation={p.side} movable={!finished && state !== 'checking'} lastMove={null} onMove={onMove} arrows={arrows} circles={circles} />
+        <div className={`puzzle-board board-theme-${theme}`}>
+          <Board pos={pos} orientation={p.side} movable={!finished && state !== 'checking'} lastMove={lastMove} onMove={onMove} arrows={arrows} circles={circles} />
         </div>
         <div className="puzzle-side">
           {c && <Portrait character={c} size={48} mood={state === 'solved' ? 'defeated' : state === 'wrong' ? 'smug' : 'thinking'} />}
@@ -101,6 +107,11 @@ function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next
             {state === 'solved' && (tries === 0 && hints < 3 ? `${movedSan}! Found it at the first try.` : `${movedSan}! Found it.`)}
             {state === 'shown' && `The better move was ${safeSan(p.fen, best)}.`}
           </p>
+          {follow && (
+            <p className="small">
+              <span className="muted">The line:</span> {follow}
+            </p>
+          )}
           {!finished && hints >= 1 && <p className="small"><span className="muted">Hint:</span> the piece to move is circled.</p>}
           {!finished && hints >= 2 && <p className="small"><span className="muted">Hint:</span> {ideaHint(p.theme)}</p>}
           {quests.map((qid) => {
@@ -146,6 +157,33 @@ function fenAfter(fen: string, uci: string): string {
   const m = moveFromUci(pos, uci);
   if (m) pos.play(m);
   return fenOf(pos);
+}
+
+/** The position before a given ply of a game (null when the game is not there). */
+function fenBefore(g: { moves: string[]; startFen?: string } | undefined, ply: number): string | null {
+  if (!g || ply < 0) return null;
+  try {
+    return fenOf(replay(g.moves.slice(0, ply), g.startFen ?? START_FEN).pos);
+  } catch {
+    return null;
+  }
+}
+
+/** "1.Qxd5 Ke7 2.Qd4" for a line from a position. */
+function lineSan(fen: string, line: string[]): string {
+  const pos = posFromFen(fen);
+  const out: string[] = [];
+  let n = Number(fen.split(' ')[5] ?? 1);
+  for (const [i, uci] of line.slice(0, 6).entries()) {
+    const m = moveFromUci(pos, uci);
+    if (!m || !pos.isLegal(m)) break;
+    const san = uciToSan(pos, uci);
+    if (pos.turn === 'white') out.push(`${n}.${san}`);
+    else out.push(i === 0 ? `${n}…${san}` : san);
+    if (pos.turn === 'black') n++;
+    pos.play(m);
+  }
+  return out.join(' ');
 }
 
 function safeSan(fen: string, uci: string | undefined): string {
