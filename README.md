@@ -62,6 +62,9 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
   *Friend of the Realm* for a game against all 32 characters, a victory effect after a win (one more at levels 3,
   5, 8, 12, 16 and 20, picked on the Hero screen), Professor Hoot's reading glasses (10 reviews) and graduation
   cap (50), and a green "✓ Reviewed" on games you have already reviewed.
+- **Automatic reviews** (v0.8.1): games you have not reviewed yet are reviewed in the background, newest first,
+  whenever no game is being played; opening one jumps the queue. The puzzle book shows the opponent's last move,
+  and after the answer the position after it, with the engine's line.
 
 Next: (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
 

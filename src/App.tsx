@@ -18,6 +18,7 @@ import { applyPieceSet } from './ui/pieces';
 import { PlayDock } from './ui/PlayDock';
 import { characterById } from './data/characters';
 import { refreshMusic, setTrack } from './ui/music';
+import { startAutoReview } from './review/reviewer';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -38,7 +39,7 @@ export function App() {
 
   const updateAvailable = useUpdate((s) => s.available);
   useEffect(() => {
-    void loadSave();
+    void loadSave().then(startAutoReview);
     initUpdateCheck();
   }, []);
 

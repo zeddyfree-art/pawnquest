@@ -4,10 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { QUESTS } from '../../game/unlocks';
 import { RewardIcon, rewardsName } from './HeroScreen';
 import { characterById, FACTIONS, shortName } from '../../data/characters';
-import { maiaPredict } from '../../engine/maia';
-import { engine } from '../../engine/stockfish';
+import { PRIORITY, review as runReview } from '../../review/reviewer';
 import { posFromFen, replay, START_FEN, uciToSan, type Side } from '../../game/chess';
-import { reviewGame, labelCounts, type GameReview } from '../../review/analyse';
+import { labelCounts, type GameReview } from '../../review/analyse';
 import { formatEval, LABEL_INFO, LABELS, moverOf, winPct } from '../../review/classify';
 import { explain, maiaInsights, moveNo } from '../../review/explain';
 import { useSave } from '../../store/save';
@@ -19,7 +18,7 @@ import { useNav } from '../nav';
 export function ReviewScreen() {
   const gameId = useNav((s) => s.reviewId);
   const go = useNav((s) => s.go);
-  const { history, reviews, setReview, startGame, lastResult, reviewUnlocks, puzzles } = useSave();
+  const { history, reviews, startGame, lastResult, reviewUnlocks, puzzles } = useSave();
   const solve = useNav((s) => s.solve);
   const record = history.find((g) => g.id === gameId) ?? (lastResult?.record.id === gameId ? lastResult.record : undefined);
   const c = record && characterById(record.characterId);
@@ -28,24 +27,16 @@ export function ReviewScreen() {
   const [error, setError] = useState<string | null>(null);
   const [ply, setPly] = useState<number | null>(null);
 
-  // Analyse once; the result is kept with the save.
+  // Analyse once (or join the background review already running for this game); the result is kept with the save.
   useEffect(() => {
     if (!record || !c || review) return;
     let alive = true;
     setError(null);
-    reviewGame(
-      { moves: record.moves, startFen: record.startFen, playerSide: record.color, playerRating: record.ratingBefore, opponentRating: c.rating },
-      engine,
-      async (fens, selfElo, oppoElo) => (await maiaPredict({ fens, selfElo, oppoElo, model: c.model })).moves,
-      (done, total) => alive && setProgress(Math.round((100 * done) / total)),
-    )
-      .then((r) => alive && setReview(record.id, r))
-      .catch((e: Error) => alive && setError(e.message || 'The review could not be made.'));
+    runReview(record, PRIORITY.open, (pct) => alive && setProgress(pct)).catch((e: Error) => alive && setError(e.message || 'The review could not be made.'));
     return () => {
       alive = false;
-      engine.stop();
     };
-  }, [record, c, review, setReview]);
+  }, [record, c, review]);
 
   const r = useMemo(() => (record ? replay(record.moves, record.startFen ?? START_FEN) : null), [record]);
   const first: Side = record?.startFen ? posFromFen(record.startFen).turn : 'white';

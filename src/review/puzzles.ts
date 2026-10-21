@@ -19,6 +19,8 @@ export interface Puzzle {
   played: string;
   /** Moves about as good as the best, best first (UCI). */
   good: string[];
+  /** The engine's line from the position, starting with the best move (UCI; older puzzles may not have it). */
+  line?: string[];
   /** The best move's evaluation, White's view (to judge other moves by). */
   bestEval: number;
   /** The kind of mistake ("Missed a fork" …), for the idea hint. */
@@ -68,6 +70,7 @@ export function puzzlesFrom(review: GameReview, game: { id: string; characterId:
       side: m.side,
       played: m.played,
       good: m.good.length ? m.good : [m.line[0]],
+      line: m.line.slice(0, 8),
       bestEval: m.bestEval,
       theme,
       date: game.date,
