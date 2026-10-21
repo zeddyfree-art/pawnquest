@@ -2,10 +2,10 @@
 // settings and the game in progress. A save file can be exported and imported.
 import { create } from 'zustand';
 import { createStore, get, set } from 'idb-keyval';
-import { CLOCK, RATING } from '../config';
+import { CLOCK, RATING, XP } from '../config';
 import { characterById } from '../data/characters';
 import type { Side } from '../game/chess';
-import { newClock, type ClockState } from '../game/clock';
+import { newClock, timeLeft, type ClockState } from '../game/clock';
 import { characterRecord, xpForGame, type GameRecord } from '../game/progress';
 import { ratedGames, ratingDelta } from '../game/rating';
 import type { Result } from '../game/rules';
@@ -15,6 +15,9 @@ import type { Hero } from '../data/gear';
 import type { Slot } from '../ui/hero';
 import type { PieceSetId } from '../ui/pieces';
 import { newUnlocks, type Progress } from '../game/unlocks';
+import { summarizeReview } from '../review/summary';
+import { habitChips } from '../game/habits';
+import { petStage } from '../game/pets';
 
 export interface ActiveGame {
   id: string;
@@ -76,8 +79,10 @@ const MAX_REVIEWS = 50;
 
 interface Store extends SaveData {
   loaded: boolean;
+  /** Quests a review just completed (shown on the review screen). */
+  reviewUnlocks: { gameId: string; quests: string[] } | null;
   /** The last finished game, for the result screen. */
-  lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean; newItems: string[]; newQuests: string[] } | null;
+  lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean; newItems: string[]; newQuests: string[]; chips: string[]; petGrew?: 1 | 2 } | null;
   startGame(characterId: string, color: Side, auto: boolean, opts?: { startFen?: string; practice?: boolean }): void;
   setReview(gameId: string, review: GameReview): void;
   updateActive(patch: Partial<ActiveGame>): void;
@@ -90,17 +95,33 @@ interface Store extends SaveData {
   resetAll(): void;
 }
 
+const firstMover = (g: GameRecord): Side => (g.startFen ? (g.startFen.split(' ')[1] === 'b' ? 'black' : 'white') : 'white');
+
+/** The player's clock time used in a game (15 minutes plus increments, minus what is left). */
+function timeUsed(a: ActiveGame, now: number): number {
+  const own = a.moves.filter((_, i) => (i % 2 === 0) === (a.color === firstMover({ startFen: a.startFen } as GameRecord))).length;
+  const timed = Math.max(0, own - (a.color === 'white' && !a.startFen ? 1 : 0)); // White's first move starts the clock
+  return Math.max(0, CLOCK.minutes * 60_000 + timed * CLOCK.incrementSeconds * 1000 - timeLeft(a.clock, a.color, now));
+}
+
+/** Old saves: summarise reviews that were stored before summaries existed. */
+function withSummaries(d: SaveData): SaveData {
+  if (!d.history.some((g) => !g.review && d.reviews[g.id])) return d;
+  return { ...d, history: d.history.map((g) => (!g.review && d.reviews[g.id] ? { ...g, review: summarizeReview(d.reviews[g.id], firstMover(g)) } : g)) };
+}
+
 const db = typeof indexedDB !== 'undefined' ? createStore('pawnquest', 'save') : undefined;
 const KEY = 'save-v1';
 
 const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews, hero: s.hero });
 
 /** What the unlocks are computed from. */
-export const progressOf = (s: Pick<SaveData, 'history' | 'reviews' | 'peak'>): Progress => ({ history: s.history, reviews: Object.keys(s.reviews).length, peak: s.peak });
+export const progressOf = (s: Pick<SaveData, 'history' | 'peak'>): Progress => ({ history: s.history, reviews: s.history.filter((g) => g.review).length, peak: s.peak });
 
 export const useSave = create<Store>()((setState, getState) => ({
   ...NEW_SAVE,
   loaded: false,
+  reviewUnlocks: null,
   lastResult: null,
 
   startGame(characterId, color, auto, opts) {
@@ -148,33 +169,50 @@ export const useSave = create<Store>()((setState, getState) => ({
       ratingAfter: s.rating + delta,
       date: new Date().toISOString(),
       auto: a.auto,
+      startedAt: a.startedAt,
+      timeUsedMs: timeUsed(a, Date.now()),
+      pet: s.hero?.pet ?? null,
       ...(a.startFen ? { startFen: a.startFen } : {}),
       ...(a.practice ? { practice: true } : {}),
     };
     if (a.practice) {
-      setState({ active: null, lastResult: { record, xpGained: 0, crownEarned: false, newItems: [], newQuests: [] } });
+      setState({ active: null, lastResult: { record, xpGained: 0, crownEarned: false, newItems: [], newQuests: [], chips: [] } });
       return;
     }
     const crownBefore = characterRecord(s.history, c.id).crown;
     const history = [...s.history, record];
     const crownAfter = characterRecord(history, c.id).crown;
-    const xpGained = xpForGame(score, crownBefore, crownAfter);
+    const chips = habitChips(record, s.history);
+    const xpGained = xpForGame(score, crownBefore, crownAfter) + chips.length * XP.habit;
     const peak = Math.max(s.peak, record.ratingAfter);
-    const fresh = newUnlocks(progressOf(s), progressOf({ history, reviews: s.reviews, peak }));
+    const fresh = newUnlocks(progressOf(s), progressOf({ history, peak }));
     setState({
       history,
       rating: record.ratingAfter,
       peak,
       xp: s.xp + xpGained,
       active: null,
-      lastResult: { record, xpGained, crownEarned: crownAfter !== crownBefore, newItems: fresh.items.map((i) => i.id), newQuests: fresh.quests.map((q) => q.id) },
+      lastResult: {
+        record,
+        xpGained,
+        crownEarned: crownAfter !== crownBefore,
+        newItems: fresh.items.map((i) => i.id),
+        newQuests: fresh.quests.map((q) => q.id),
+        chips,
+        petGrew: record.pet && petStage(history, record.pet) > petStage(s.history, record.pet) ? (petStage(history, record.pet) as 1 | 2) : undefined,
+      },
     });
   },
 
   setReview(gameId, review) {
-    const keep = new Set(getState().history.slice(-MAX_REVIEWS).map((g) => g.id));
-    const reviews = Object.fromEntries(Object.entries({ ...getState().reviews, [gameId]: review }).filter(([id]) => keep.has(id) || id === gameId));
-    setState({ reviews });
+    const s = getState();
+    const keep = new Set(s.history.slice(-MAX_REVIEWS).map((g) => g.id));
+    const reviews = Object.fromEntries(Object.entries({ ...s.reviews, [gameId]: review }).filter(([id]) => keep.has(id) || id === gameId));
+    // The summary stays on the game record, so quests keep counting it after the full review is pruned.
+    const before = progressOf(s);
+    const history = s.history.map((g) => (g.id === gameId ? { ...g, review: summarizeReview(review, firstMover(g)) } : g));
+    const fresh = newUnlocks(before, progressOf({ history, peak: s.peak }));
+    setState({ reviews, history, reviewUnlocks: { gameId, quests: fresh.quests.map((q) => q.id) } });
   },
 
   abandonActive() {
@@ -215,7 +253,7 @@ export function parseSave(json: string): SaveData {
     throw new Error('This is not a Pawnquest save file.');
   }
   if (!d || d.version !== 1 || typeof d.rating !== 'number' || !Array.isArray(d.history)) throw new Error('This is not a Pawnquest save file.');
-  return { ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) }, reviews: d.reviews ?? {}, hero: d.hero ?? null } as SaveData;
+  return withSummaries({ ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) }, reviews: d.reviews ?? {}, hero: d.hero ?? null } as SaveData);
 }
 
 export function exportSave(): string {
@@ -231,7 +269,7 @@ async function write() {
 
 export async function loadSave() {
   const stored = db ? await get<SaveData>(KEY, db).catch(() => undefined) : undefined;
-  useSave.setState({ ...(stored ? { ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings }, reviews: stored.reviews ?? {}, hero: stored.hero ?? null } : NEW_SAVE), loaded: true });
+  useSave.setState({ ...(stored ? withSummaries({ ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings }, reviews: stored.reviews ?? {}, hero: stored.hero ?? null }) : NEW_SAVE), loaded: true });
   useSave.subscribe(() => {
     if (queued) return;
     queued = true;

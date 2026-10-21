@@ -5,11 +5,13 @@ import { describeResult } from '../../game/rules';
 import { useSave } from '../../store/save';
 import { CrownIcon, Delta, Portrait } from '../components';
 import { useNav } from '../nav';
-import { characterRecord } from '../../game/progress';
-import { itemById } from '../../data/gear';
+import { characterRecord, lossStreak } from '../../game/progress';
+import { CHIP_LABEL } from '../../game/habits';
+import { itemById, petById } from '../../data/gear';
+import type { PetKind } from '../hero';
 import { QUESTS } from '../../game/unlocks';
-import { GearIcon, HeroSprite } from '../components';
-import { RewardIcon, rewardName } from './HeroScreen';
+import { GearIcon, HeroSprite, PetIcon } from '../components';
+import { RewardIcon, rewardsName } from './HeroScreen';
 import { jingle } from '../music';
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -87,10 +89,31 @@ export function ResultScreen() {
             <Delta value={rec.ratingAfter - rec.ratingBefore} />
           </div>
         )}
+        {last.chips.length > 0 && (
+          <div className="habit-chips" aria-label="Good habits">
+            {last.chips.map((c) => (
+              <span key={c} className="habit-chip">
+                {CHIP_LABEL[c]} <b>+10 XP</b>
+              </span>
+            ))}
+          </div>
+        )}
+        {!rec.practice && rec.score === 0 && lossStreak(history) >= 3 && (
+          <p className="breather">Tough run. Even grandmasters take a walk now and then.{hero?.pet ? ' Your pet is waiting for you.' : ''}</p>
+        )}
         {last.crownEarned && (
           <p className="crown-earned">
             <CrownIcon crown={crown} size={28} /> New {crown} crown against {c.name}!
           </p>
+        )}
+        {last.petGrew && last.record.pet && (
+          <div className="reward">
+            <PetIcon kind={last.record.pet as PetKind} stage={last.petGrew} size={48} />
+            <span>
+              <small>{last.petGrew === 2 ? '100 games together' : '25 games together'}</small>
+              <b>{last.petGrew === 2 ? `${petById(last.record.pet)?.name} grew up!` : `${petById(last.record.pet)?.name} got a little gift!`}</b>
+            </span>
+          </div>
         )}
         {last.newItems.map((id) => {
           const it = itemById(id);
@@ -121,10 +144,10 @@ export function ResultScreen() {
           if (!q) return null;
           return (
             <div key={qid} className="reward">
-              <RewardIcon r={q.reward} size={48} />
+              <RewardIcon r={q.rewards[0]} size={48} />
               <span>
                 <small>Quest complete: {q.title}</small>
-                <b>{rewardName(q.reward)}</b>
+                <b>{rewardsName(q.rewards)}</b>
               </span>
             </div>
           );

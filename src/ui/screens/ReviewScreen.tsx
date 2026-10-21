@@ -1,6 +1,8 @@
 // The game review: accuracy, how your moves were labelled, the evaluation over the game, and the key moments
 // explained in plain English, each with the better move on the board and a "Try again" from that position.
 import { useEffect, useMemo, useState } from 'react';
+import { QUESTS } from '../../game/unlocks';
+import { RewardIcon, rewardsName } from './HeroScreen';
 import { characterById, FACTIONS, shortName } from '../../data/characters';
 import { maiaPredict } from '../../engine/maia';
 import { engine } from '../../engine/stockfish';
@@ -17,7 +19,7 @@ import { useNav } from '../nav';
 export function ReviewScreen() {
   const gameId = useNav((s) => s.reviewId);
   const go = useNav((s) => s.go);
-  const { history, reviews, setReview, startGame, lastResult } = useSave();
+  const { history, reviews, setReview, startGame, lastResult, reviewUnlocks } = useSave();
   const record = history.find((g) => g.id === gameId) ?? (lastResult?.record.id === gameId ? lastResult.record : undefined);
   const c = record && characterById(record.characterId);
   const review = gameId ? reviews[gameId] : undefined;
@@ -93,6 +95,19 @@ export function ReviewScreen() {
       <p className="muted">
         You vs {c.name} ({c.rating}) · {record.score === 1 ? 'won' : record.score === 0 ? 'lost' : 'drawn'} · {Math.ceil(record.moves.length / 2)} moves
       </p>
+      {reviewUnlocks?.gameId === record.id &&
+        reviewUnlocks.quests.map((qid) => {
+          const q = QUESTS.find((x) => x.id === qid);
+          return q ? (
+            <div key={qid} className="reward review-unlocks">
+              <RewardIcon r={q.rewards[0]} size={40} />
+              <span>
+                <small>Quest complete: {q.title}</small>
+                <b>{rewardsName(q.rewards)}</b>
+              </span>
+            </div>
+          ) : null;
+        })}
 
       <div className="panel review-top">
         <AccuracyRing value={review.accuracy[me]} label="You" />

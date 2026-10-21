@@ -23,12 +23,12 @@ export interface HeroLook {
   face?: 'normal' | 'skull' | 'buttons';
 }
 
-export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap' | 'mitre' | 'hornhelm' | 'tophat' | 'circlet';
+export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap' | 'mitre' | 'hornhelm' | 'tophat' | 'circlet' | 'feather' | 'beanie';
 export type FaceKind = 'glasses' | 'monocle' | 'mask' | 'fangs' | 'warpaint' | 'eyepatch';
 export type BodyKind = 'tunic' | 'robe' | 'armor' | 'plate' | 'apron' | 'cloak' | 'fur' | 'vest' | 'rags' | 'jester' | 'coat' | 'burlap';
 export type LegsKind = 'trousers' | 'patched' | 'greaves';
-export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute';
-export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery';
+export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute' | 'quill';
+export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery' | 'hourglass' | 'compass' | 'pawn' | 'candle';
 
 /** How one piece of gear is drawn: its shape and colours. */
 export type GearArt =
@@ -347,6 +347,10 @@ function drawMain(cv: Canvas, g: Extract<GearArt, { slot: 'main' }>) {
       cv.part(only(minus(ellipse(x + 2, y - 4, 7, 15), ellipse(x + 3.6, y - 4, 6, 13.6)), rect(0, 0, x + 2.5, 64)), c);
       for (let yy = Math.round(y - 18); yy <= Math.round(y + 10); yy++) cv.dot(Math.round(x + 2), yy, '#efe6d6');
       break;
+    case 'quill':
+      cv.part(polygon([[x - 1, y + 1], [x - 4, y - 8], [x - 6, y - 16], [x - 3, y - 13], [x - 1, y - 6], [x + 0.5, y]]), c);
+      for (let k = 0; k < 6; k++) cv.dot(Math.round(x - 1 - k * 0.7), Math.round(y - 3 - k * 2), tone(c, -0.25));
+      break;
     case 'lute':
       cv.part(segment(x + 1, y - 2, x + 6, y - 14, 2), tone(c, -0.2));
       cv.part(ellipse(x, y + 1, 4.4, 5), c);
@@ -386,6 +390,25 @@ function drawOff(cv: Canvas, g: Extract<GearArt, { slot: 'off' }>) {
     case 'orb':
       cv.part(ellipse(x + 0.5, y - 4.5, 4, 4), c);
       cv.dot(Math.round(x - 1), Math.round(y - 7), '#ffffff');
+      break;
+    case 'hourglass':
+      cv.part(any(rect(x - 3.5, y - 10, x + 4.5, y - 8.5), rect(x - 3.5, y + 0.5, x + 4.5, y + 2)), WOOD);
+      cv.part(polygon([[x - 2.5, y - 8.5], [x + 3.5, y - 8.5], [x + 1, y - 4], [x + 3.5, y + 0.5], [x - 2.5, y + 0.5], [x, y - 4]]), '#d8eef4');
+      cv.part(any(polygon([[x - 1.2, y - 7.5], [x + 2.2, y - 7.5], [x + 0.5, y - 5]]), polygon([[x - 1.5, y + 0.5], [x + 2.5, y + 0.5], [x + 0.5, y - 2]])), c, { outline: false, rim: false });
+      break;
+    case 'compass':
+      cv.part(ellipse(x + 0.5, y - 3, 4.4, 4.4), c);
+      cv.part(ellipse(x + 0.5, y - 3, 3, 3), '#f4ead6', { outline: false, rim: false });
+      cv.dot(Math.round(x), Math.round(y - 5), '#d0443a');
+      cv.dot(Math.round(x + 1), Math.round(y - 1), '#3b2617');
+      break;
+    case 'pawn':
+      cv.part(any(ellipse(x + 0.5, y - 9, 2.2, 2.2), polygon([[x - 1.5, y - 7], [x + 2.5, y - 7], [x + 3.5, y - 1], [x - 2.5, y - 1]]), rect(x - 3.5, y - 1, x + 4.5, y + 1)), GOLD);
+      break;
+    case 'candle':
+      cv.part(ellipse(x + 0.5, y + 0.5, 4, 1.4), '#c9a04a');
+      cv.part(rect(x - 1, y - 8, x + 2, y), '#f4ead6');
+      cv.part(polygon([[x - 0.5, y - 8.5], [x + 0.5, y - 12], [x + 1.5, y - 8.5]]), '#f2b33d', { outline: false });
       break;
     case 'phylactery':
       cv.part(rect(x - 2.5, y - 9, x + 3.5, y + 0), '#b8d8d0');
@@ -468,6 +491,16 @@ function drawHeadGear(cv: Canvas, g: Extract<GearArt, { slot: 'head' }>) {
     case 'leafcrown':
       cv.part(any(...[14.5, 18, 21.5, 26.5, 30, 33.5].map((x, i) => ellipse(x, 10.5 + Math.abs(x - CX) * 0.15 - (i % 2), 2.4, 1.6))), c);
       cv.part(any(ellipse(CX, 9, 1.8, 1.8), ellipse(19.5, 9.6, 1.2, 1.2), ellipse(28.5, 9.6, 1.2, 1.2)), c2);
+      break;
+    case 'feather':
+      cv.part(only(ellipse(CX, 17, 11.4, 10.6), rect(0, 0, 48, 13)), c2);
+      cv.part(polygon([[30, 11], [34, 2], [38, -1], [36, 5], [32, 12]]), c);
+      cv.part(polygon([[32, 9], [36, 1], [37, 2], [33, 10]]), GOLD, { outline: false, rim: false });
+      break;
+    case 'beanie':
+      cv.part(only(ellipse(CX, 16.5, 11.6, 10.8), rect(0, 0, 48, 14)), c, { pattern: (x) => (x % 3 === 0 ? tone(c, -0.12) : null) });
+      cv.part(rect(12.6, 11.5, 35.4, 14.5), c2, { rim: false });
+      cv.part(ellipse(CX, 5.5, 2.6, 2.4), c2);
       break;
     case 'mitre':
       cv.part(polygon([[16, 13], [32, 13], [32, 4], [24, -2], [16, 4]]), c);
@@ -581,89 +614,140 @@ export function cropSquare(px: (string | null)[], w: number, h: number, pad = 2,
 // ---------- pets ----------
 export type PetKind = 'chick' | 'cat' | 'dog' | 'frog' | 'owl' | 'fox' | 'slime' | 'bat' | 'ghost' | 'dragon';
 
-function petEyes(cv: Canvas, pts: Pt[], c = '#2b1a12') {
-  for (const [x, y] of pts) {
-    cv.dot(x, y, c);
-    cv.dot(x, y + 1, c);
-  }
-}
+/** A pet grows with you: 0 as found, 1 with an accessory (25 games together), 2 grown up (100 games). */
+export type PetStage = 0 | 1 | 2;
+export const petSize = (stage: PetStage) => (stage === 2 ? 26 : PET_SIZE);
 
-export function renderPet(kind: PetKind): (string | null)[] {
-  const cv = new Canvas(PET_SIZE);
-  const shadow: Shape = ellipse(10, 18.6, 6, 1.2);
-  if (kind !== 'ghost' && kind !== 'bat') for (let y = 16; y < 20; y++) for (let x = 0; x < 20; x++) if (shadow(x + 0.5, y + 0.5)) cv.set(x, y, '#00000033');
+export function renderPet(kind: PetKind, stage: PetStage = 0): (string | null)[] {
+  // Drawn in a 20-pixel design space; the grown form is the same drawing 1.3 times larger on a 26-pixel canvas.
+  const N = petSize(stage);
+  const k = stage === 2 ? 1.3 : 1;
+  const tx = (x: number) => N / 2 + (x - 10) * k;
+  const ty = (y: number) => N - 1 - (19 - y) * k;
+  const E = (x: number, y: number, rx: number, ry: number) => ellipse(tx(x), ty(y), rx * k, ry * k);
+  const R = (x0: number, y0: number, x1: number, y1: number) => rect(tx(x0), ty(y0), tx(x1), ty(y1));
+  const P = (pts: Pt[]) => polygon(pts.map(([x, y]) => [tx(x), ty(y)] as Pt));
+  const Sg = (x0: number, y0: number, x1: number, y1: number, w: number) => segment(tx(x0), ty(y0), tx(x1), ty(y1), w * k);
+  const dot = (x: number, y: number, c: string) => cv.dot(Math.round(tx(x)), Math.round(ty(y)), c);
+  const eyes = (pts: Pt[], c = '#2b1a12') => pts.forEach(([x, y]) => (dot(x, y, c), dot(x, y + 1, c)));
+  const cv = new Canvas(N);
+  const shadow: Shape = E(10, 18.6, 6, 1.2);
+  if (kind !== 'ghost' && kind !== 'bat') for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shadow(x + 0.5, y + 0.5)) cv.set(x, y, '#00000033');
+  // Grown dragons get wings, behind the body.
+  if (kind === 'dragon' && stage === 2) cv.part(any(P([[12, 11], [16, 3], [19, 6], [17, 11]]), P([[9, 11], [5, 4], [3, 9], [7, 12]])), '#3f8a44');
   switch (kind) {
     case 'chick':
-      cv.part(ellipse(10, 13, 5.4, 5), '#f8d548');
-      cv.part(polygon([[14.6, 12], [17.6, 13], [14.6, 14.2]]), '#e8833a');
-      cv.part(ellipse(8.6, 14.4, 2.4, 1.6), '#e8b830', { rim: false });
-      petEyes(cv, [[12, 11]]);
-      cv.part(any(rect(8, 17.4, 9, 19), rect(11, 17.4, 12, 19)), '#e8833a', { outline: false, rim: false });
+      cv.part(E(10, 13, 5.4, 5), stage === 2 ? '#f4f0e6' : '#f8d548');
+      cv.part(P([[14.6, 12], [17.6, 13], [14.6, 14.2]]), '#e8833a');
+      cv.part(E(8.6, 14.4, 2.4, 1.6), '#e8b830', { rim: false });
+      eyes([[12, 11]]);
+      cv.part(any(R(8, 17.4, 9, 19), R(11, 17.4, 12, 19)), '#e8833a', { outline: false, rim: false });
       break;
     case 'cat':
-      cv.part(segment(15, 16, 18, 9, 1.8), '#e09a4a');
-      cv.part(ellipse(10.5, 14.5, 5.4, 3.8), '#e09a4a');
-      cv.part(any(ellipse(8, 9.5, 4.4, 3.8), polygon([[4.2, 8], [4.6, 3.6], [7.4, 6.5]]), polygon([[11.8, 8], [11.4, 3.6], [8.6, 6.5]])), '#e09a4a');
-      petEyes(cv, [[6, 9], [9, 9]], '#3b5a2a');
-      cv.dot(7, 11, '#c0605a');
+      cv.part(Sg(15, 16, 18, 9, 1.8), '#e09a4a');
+      cv.part(E(10.5, 14.5, 5.4, 3.8), '#e09a4a');
+      cv.part(any(E(8, 9.5, 4.4, 3.8), P([[4.2, 8], [4.6, 3.6], [7.4, 6.5]]), P([[11.8, 8], [11.4, 3.6], [8.6, 6.5]])), '#e09a4a');
+      eyes([[6, 9], [9, 9]], '#3b5a2a');
+      dot(7, 11, '#c0605a');
       break;
     case 'dog':
-      cv.part(segment(15.5, 13, 18, 9.5, 1.8), '#b07a4a');
-      cv.part(ellipse(11, 14.5, 5.6, 3.8), '#b07a4a');
-      cv.part(ellipse(7.6, 9.6, 4.2, 4), '#b07a4a');
-      cv.part(any(ellipse(4, 10, 1.6, 3), ellipse(11, 10, 1.6, 3)), '#7a4f2c');
-      cv.part(ellipse(6, 12, 1.8, 1.3), '#e8d4b0', { rim: false });
-      petEyes(cv, [[6, 8], [9, 8]]);
-      cv.dot(5, 11, '#2b1a12');
+      cv.part(Sg(15.5, 13, 18, 9.5, 1.8), '#b07a4a');
+      cv.part(E(11, 14.5, 5.6, 3.8), '#b07a4a');
+      cv.part(E(7.6, 9.6, 4.2, 4), '#b07a4a');
+      cv.part(any(E(4, 10, 1.6, 3), E(11, 10, 1.6, 3)), '#7a4f2c');
+      cv.part(E(6, 12, 1.8, 1.3), '#e8d4b0', { rim: false });
+      eyes([[6, 8], [9, 8]]);
+      dot(5, 11, '#2b1a12');
       break;
     case 'frog':
-      cv.part(ellipse(10, 14, 6.4, 4.2), '#6cc04a');
-      cv.part(any(ellipse(6.6, 9.6, 2.4, 2.4), ellipse(13.4, 9.6, 2.4, 2.4)), '#6cc04a');
-      cv.part(ellipse(10, 15.4, 4, 2), '#c8e88a', { rim: false });
-      petEyes(cv, [[6, 9], [13, 9]]);
+      cv.part(E(10, 14, 6.4, 4.2), '#6cc04a');
+      cv.part(any(E(6.6, 9.6, 2.4, 2.4), E(13.4, 9.6, 2.4, 2.4)), '#6cc04a');
+      cv.part(E(10, 15.4, 4, 2), '#c8e88a', { rim: false });
+      eyes([[6, 9], [13, 9]]);
       break;
     case 'owl':
-      cv.part(ellipse(10, 12, 5.6, 6.6), '#9a7a5a');
-      cv.part(any(polygon([[4.6, 7], [5.4, 3.4], [8, 6]]), polygon([[15.4, 7], [14.6, 3.4], [12, 6]])), '#9a7a5a');
-      cv.part(ellipse(10, 14.6, 3.4, 3.2), '#e8d4b0', { rim: false });
-      cv.part(any(ellipse(7.6, 9.6, 2.2, 2.2), ellipse(12.4, 9.6, 2.2, 2.2)), '#f8f0dc', { rim: false });
-      petEyes(cv, [[7, 9], [12, 9]]);
-      cv.dot(10, 11, '#e8a03a');
+      cv.part(E(10, 12, 5.6, 6.6), '#9a7a5a');
+      cv.part(any(P([[4.6, 7], [5.4, 3.4], [8, 6]]), P([[15.4, 7], [14.6, 3.4], [12, 6]])), '#9a7a5a');
+      cv.part(E(10, 14.6, 3.4, 3.2), '#e8d4b0', { rim: false });
+      cv.part(any(E(7.6, 9.6, 2.2, 2.2), E(12.4, 9.6, 2.2, 2.2)), '#f8f0dc', { rim: false });
+      eyes([[7, 9], [12, 9]]);
+      dot(10, 11, '#e8a03a');
       break;
     case 'fox':
-      cv.part(ellipse(15, 13, 3.6, 2.4), '#e8743a');
-      cv.dot(17, 13, '#ffffff');
-      cv.dot(18, 13, '#ffffff');
-      cv.part(ellipse(10, 14.6, 5, 3.6), '#e8743a');
-      cv.part(any(ellipse(7.8, 9.8, 4, 3.4), polygon([[4.2, 8.4], [4.4, 3.6], [7.4, 7]]), polygon([[11.4, 8.4], [11.2, 3.6], [8.2, 7]])), '#e8743a');
-      cv.part(ellipse(7.8, 11.6, 2.6, 1.4), '#fff4e4', { rim: false });
-      petEyes(cv, [[6, 9], [9, 9]]);
+      cv.part(E(15, 13, 3.6, 2.4), '#e8743a');
+      dot(17, 13, '#ffffff');
+      dot(18, 13, '#ffffff');
+      cv.part(E(10, 14.6, 5, 3.6), '#e8743a');
+      cv.part(any(E(7.8, 9.8, 4, 3.4), P([[4.2, 8.4], [4.4, 3.6], [7.4, 7]]), P([[11.4, 8.4], [11.2, 3.6], [8.2, 7]])), '#e8743a');
+      cv.part(E(7.8, 11.6, 2.6, 1.4), '#fff4e4', { rim: false });
+      eyes([[6, 9], [9, 9]]);
       break;
     case 'slime':
-      cv.part(any(ellipse(10, 14, 6.6, 4.6), ellipse(10, 11, 4, 4)), '#5ac8e8');
-      cv.dot(7, 9, '#ffffff');
-      cv.dot(8, 9, '#ffffff');
-      petEyes(cv, [[8, 12], [12, 12]]);
+      cv.part(any(E(10, 14, 6.6, 4.6), E(10, 11, 4, 4)), '#5ac8e8');
+      dot(7, 9, '#ffffff');
+      dot(8, 9, '#ffffff');
+      eyes([[8, 12], [12, 12]]);
       break;
     case 'bat':
-      cv.part(any(polygon([[10, 9], [2, 6], [3, 10], [1, 12], [6, 12], [10, 13]]), polygon([[10, 9], [18, 6], [17, 10], [19, 12], [14, 12], [10, 13]])), '#6a4a7a');
-      cv.part(any(ellipse(10, 11, 3, 3.2), polygon([[7.6, 9], [8, 6], [9.6, 8.4]]), polygon([[12.4, 9], [12, 6], [10.4, 8.4]])), '#7a5a8a');
-      petEyes(cv, [[9, 10], [11, 10]], '#f8e080');
+      cv.part(any(P([[10, 9], [2, 6], [3, 10], [1, 12], [6, 12], [10, 13]]), P([[10, 9], [18, 6], [17, 10], [19, 12], [14, 12], [10, 13]])), '#6a4a7a');
+      cv.part(any(E(10, 11, 3, 3.2), P([[7.6, 9], [8, 6], [9.6, 8.4]]), P([[12.4, 9], [12, 6], [10.4, 8.4]])), '#7a5a8a');
+      eyes([[9, 10], [11, 10]], '#f8e080');
       break;
     case 'ghost':
-      cv.part(polygon([[4, 17], [4, 9], [6, 5], [10, 3.4], [14, 5], [16, 9], [16, 17], [14, 15.4], [12, 17], [10, 15.4], [8, 17], [6, 15.4]]), '#eef2f8');
-      petEyes(cv, [[8, 8], [12, 8]], '#3b3a5a');
-      cv.dot(10, 12, '#3b3a5a');
+      cv.part(P([[4, 17], [4, 9], [6, 5], [10, 3.4], [14, 5], [16, 9], [16, 17], [14, 15.4], [12, 17], [10, 15.4], [8, 17], [6, 15.4]]), '#eef2f8');
+      eyes([[8, 8], [12, 8]], '#3b3a5a');
+      dot(10, 12, '#3b3a5a');
       break;
     case 'dragon':
-      cv.part(segment(14.5, 15.5, 18.4, 12, 2), '#58b05a');
-      cv.part(polygon([[8, 9], [4, 3.4], [11, 6.6]]), '#e86a4a');
-      cv.part(ellipse(11, 14.4, 5, 4), '#58b05a');
-      cv.part(ellipse(8, 9, 4.2, 3.6), '#58b05a');
-      cv.part(ellipse(11, 15.6, 2.8, 2), '#f2d27a', { rim: false });
-      cv.part(any(polygon([[6, 6], [6.4, 3], [8, 5.8]]), polygon([[9.6, 5.8], [10.6, 3], [11, 6]])), '#f2d27a');
-      petEyes(cv, [[6, 8], [9, 8]]);
+      cv.part(Sg(14.5, 15.5, 18.4, 12, 2), '#58b05a');
+      cv.part(P([[8, 9], [4, 3.4], [11, 6.6]]), '#e86a4a');
+      cv.part(E(11, 14.4, 5, 4), '#58b05a');
+      cv.part(E(8, 9, 4.2, 3.6), '#58b05a');
+      cv.part(E(11, 15.6, 2.8, 2), '#f2d27a', { rim: false });
+      cv.part(any(P([[6, 6], [6.4, 3], [8, 5.8]]), P([[9.6, 5.8], [10.6, 3], [11, 6]])), '#f2d27a');
+      eyes([[6, 8], [9, 8]]);
       break;
+  }
+  if (stage >= 1) {
+    const scarf = (x: number, y: number, c: string) => cv.part(any(R(x - 3.4, y - 0.8, x + 3.4, y + 0.8), P([[x + 1, y], [x + 3, y + 3.4], [x + 1.6, y + 3.4]])), c, { rim: false });
+    const bow = (x: number, y: number, c: string) => cv.part(any(P([[x, y], [x - 2.6, y - 1.6], [x - 2.6, y + 1.6]]), P([[x, y], [x + 2.6, y - 1.6], [x + 2.6, y + 1.6]])), c, { rim: false });
+    switch (kind) {
+      case 'chick':
+        if (stage === 2) {
+          cv.part(any(E(11, 7.6, 1.2, 1.4), E(12.6, 7.9, 1.1, 1.3), E(9.6, 8.2, 1, 1.2)), '#d0443a', { rim: false }); // comb
+          cv.part(E(15.2, 15, 0.9, 1.2), '#d0443a', { rim: false }); // wattle
+        } else bow(10, 8.6, '#e86a8a');
+        break;
+      case 'cat':
+        cv.part(R(5, 12.2, 11, 13.2), '#d0443a', { rim: false, outline: false });
+        cv.part(E(8, 13.8, 1, 1), GOLD, { rim: false });
+        break;
+      case 'dog':
+        scarf(7.6, 12.8, '#d0443a');
+        break;
+      case 'frog':
+        if (stage === 2) cv.part(P([[6.5, 8.2], [6.5, 4.8], [8.2, 6.4], [10, 3.8], [11.8, 6.4], [13.5, 4.8], [13.5, 8.2]]), GOLD);
+        else cv.part(any(E(10, 9.6, 3.4, 1.3), Sg(10, 9, 11, 7, 0.8)), '#4a8a3a', { rim: false });
+        break;
+      case 'owl':
+        bow(10, 16.4, '#0099db');
+        break;
+      case 'fox':
+        scarf(7.8, 12.6, '#0099db');
+        break;
+      case 'slime':
+        bow(10, 7.2, '#e86a8a');
+        break;
+      case 'bat':
+        bow(10, 13.6, '#f2b33d');
+        break;
+      case 'ghost':
+        cv.part(any(R(7.6, 1, 12.4, 4), R(6.4, 3.6, 13.6, 4.6)), '#2b2238', { rim: false });
+        break;
+      case 'dragon':
+        scarf(8, 12.4, '#f2b33d');
+        break;
+    }
   }
   return cv.px;
 }
@@ -688,8 +772,8 @@ export function gearIconUrl(art: GearArt): string {
   });
 }
 
-export function petUrl(kind: PetKind): string {
-  return memo(`pet:${kind}`, () => pixelsToUrl(renderPet(kind), PET_SIZE, PET_SIZE));
+export function petUrl(kind: PetKind, stage: PetStage = 0): string {
+  return memo(`pet:${kind}:${stage}`, () => pixelsToUrl(renderPet(kind, stage), petSize(stage), petSize(stage)));
 }
 
 const ICON_LOOK: HeroLook = { skin: '#efc29a', hair: '#5a3a22', hairStyle: 'none', eyes: '#2b2238' };

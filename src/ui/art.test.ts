@@ -58,7 +58,13 @@ describe('the hero', () => {
     const seen = new Set<string>();
     for (const h of HAIR_STYLES) seen.add(renderHero({ ...look, hairStyle: h.id }, {}).join());
     expect(seen.size).toBe(HAIR_STYLES.length);
-    for (const p of PETS) expect(renderPet(p.id).filter(Boolean).length, p.id).toBeGreaterThan(30);
+    for (const p of PETS) {
+      const [base, gift, grown] = ([0, 1, 2] as const).map((st) => renderPet(p.id, st));
+      expect(base.filter(Boolean).length, p.id).toBeGreaterThan(30);
+      expect(gift, `${p.id} has an accessory`).not.toEqual(base);
+      expect(grown.length, `${p.id} grows`).toBeGreaterThan(base.length);
+      expect(grown.filter(Boolean).length, p.id).toBeGreaterThan(base.filter(Boolean).length);
+    }
   });
   it('every piece set draws both colours', () => {
     for (const s of PIECE_SETS) expect(renderPiece('queen', 'white', s.id)).not.toEqual(renderPiece('queen', 'black', s.id));

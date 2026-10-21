@@ -1,6 +1,7 @@
 // The fight: the board, the opponent (who speaks in a bubble beside their portrait), you below, both clocks (15+10).
 // The bot thinks in the Maia worker; its fake think time comes off its own clock.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TITLES } from '../../data/titles';
 import { CLOCK } from '../../config';
 import { characterById, REACTIONS, shortName, type Character } from '../../data/characters';
 import { acceptsDraw, chooseBotMove, shouldResign, thinkTimeMs } from '../../engine/botPlayer';
@@ -297,7 +298,10 @@ export function Battle() {
         {hero && <HeroBust hero={hero} mood={mood === 'defeated' ? 'happy' : mood === 'smug' ? 'sad' : 'idle'} />}
         <div className="fighter-info">
           <b>{hero?.name ?? 'You'}</b>
-          <small>{rating}</small>
+          <small>
+            {rating}
+            {hero?.title && TITLES[hero.title] ? ` · ${TITLES[hero.title]}` : ''}
+          </small>
           <Material roles={taken[playerSide]} color={botSide} plus={balance} />
         </div>
         <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : `${shortName(c.name)} is thinking…`) : ''}</span>
