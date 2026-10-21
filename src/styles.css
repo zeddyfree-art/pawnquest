@@ -478,3 +478,5 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 .habit-chip b { color: var(--good); }
 .breather { margin: 0; padding: 8px 12px; border-radius: 6px; background: #eef3fb; font-size: 14px; }
 .review-unlocks { margin: 0 0 12px; }
+.pet-growth { text-transform: none !important; letter-spacing: 0 !important; color: var(--accent-dark) !important; }
+.pet-count { color: var(--dim); }

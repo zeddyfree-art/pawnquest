@@ -17,6 +17,7 @@ import type { PieceSetId } from '../ui/pieces';
 import { newUnlocks, type Progress } from '../game/unlocks';
 import { summarizeReview } from '../review/summary';
 import { habitChips } from '../game/habits';
+import { petStage } from '../game/pets';
 
 export interface ActiveGame {
   id: string;
@@ -81,7 +82,7 @@ interface Store extends SaveData {
   /** Quests a review just completed (shown on the review screen). */
   reviewUnlocks: { gameId: string; quests: string[] } | null;
   /** The last finished game, for the result screen. */
-  lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean; newItems: string[]; newQuests: string[]; chips: string[] } | null;
+  lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean; newItems: string[]; newQuests: string[]; chips: string[]; petGrew?: 1 | 2 } | null;
   startGame(characterId: string, color: Side, auto: boolean, opts?: { startFen?: string; practice?: boolean }): void;
   setReview(gameId: string, review: GameReview): void;
   updateActive(patch: Partial<ActiveGame>): void;
@@ -191,7 +192,15 @@ export const useSave = create<Store>()((setState, getState) => ({
       peak,
       xp: s.xp + xpGained,
       active: null,
-      lastResult: { record, xpGained, crownEarned: crownAfter !== crownBefore, newItems: fresh.items.map((i) => i.id), newQuests: fresh.quests.map((q) => q.id), chips },
+      lastResult: {
+        record,
+        xpGained,
+        crownEarned: crownAfter !== crownBefore,
+        newItems: fresh.items.map((i) => i.id),
+        newQuests: fresh.quests.map((q) => q.id),
+        chips,
+        petGrew: record.pet && petStage(history, record.pet) > petStage(s.history, record.pet) ? (petStage(history, record.pet) as 1 | 2) : undefined,
+      },
     });
   },
 

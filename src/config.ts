@@ -29,7 +29,9 @@ export const MATCHMAKING = {
 /** Crowns per character: bronze, silver, gold at this many wins. */
 export const CROWNS = { bronze: 1, silver: 3, gold: 5 };
 
-/** XP per game result and per crown earned. */
+/** Pets grow with the games played together: an accessory, then the grown-up form. */
+export const PET_GROWTH = { accessory: 25, grown: 100 };
+
 /** XP per game result, per crown earned, and per good-habit chip on the result screen (two at most). */
 export const XP = { win: 30, draw: 15, loss: 5, crown: 50, habit: 10, perLevel: 200 };
 

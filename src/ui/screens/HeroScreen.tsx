@@ -6,6 +6,8 @@ import { ITEMS, PETS, SLOT_LABEL, classById, itemById, petById } from '../../dat
 import { levelFor } from '../../game/progress';
 import { QUEST_GROUPS, QUESTS, unlocks, type Reward } from '../../game/unlocks';
 import { TITLES } from '../../data/titles';
+import { gamesWithPet, nextGrowth, petStage } from '../../game/pets';
+import { PET_GROWTH } from '../../config';
 import { progressOf, useSave } from '../../store/save';
 import { BOARD_THEMES, boardDataUrl } from '../boards';
 import { GearIcon, HeroSprite, PetIcon } from '../components';
@@ -34,6 +36,13 @@ export function RewardIcon({ r, size = 36 }: { r: Reward; size?: number }) {
   if (r.kind === 'pieces') return <img className="gear-icon" src={pieceDataUrl('knight', 'black', r.id)} alt="" width={size} height={size} />;
   const t = BOARD_THEMES.find((b) => b.id === r.id)!;
   return <img className="gear-icon board-icon" src={boardDataUrl(t)} alt="" width={size} height={size} />;
+}
+
+/** "12 of 25 games together: then a scarf", or "All grown up". */
+function growthText(history: Parameters<typeof petStage>[0], pet: string): string {
+  const next = nextGrowth(history, pet);
+  if (!next) return 'All grown up! 100+ games together';
+  return `${next.games} of ${next.of} games together: ${next.of === PET_GROWTH.accessory ? 'then a little gift' : 'then it grows up'}`;
 }
 
 export function HeroScreen() {
@@ -86,10 +95,11 @@ export function HeroScreen() {
             return (
               <div key={slot} className="slot">
                 <button className="slot-row" aria-expanded={open === slot} onClick={() => setOpen(open === slot ? null : slot)}>
-                  <span className="slot-icon">{worn ? <GearIcon art={worn.art} /> : pet ? <PetIcon kind={pet.id} /> : null}</span>
+                  <span className="slot-icon">{worn ? <GearIcon art={worn.art} /> : pet ? <PetIcon kind={pet.id} stage={petStage(s.history, pet.id)} /> : null}</span>
                   <span className="slot-text">
                     <small>{isPet ? 'Pet' : SLOT_LABEL[slot]}</small>
                     <b>{worn?.name ?? pet?.name ?? 'Nothing'}</b>
+                    {pet && <small className="pet-growth">{growthText(s.history, pet.id)}</small>}
                   </span>
                   <span className="slot-count">{isPet ? `${u.pets.size}/${PETS.length}` : `${choices.filter((i) => u.items.has(i.id)).length}/${choices.length}`}</span>
                 </button>
@@ -105,8 +115,9 @@ export function HeroScreen() {
                           const q = questFor({ kind: 'pet', id: p.id });
                           return (
                             <button key={p.id} className={`pick${hero.pet === p.id ? ' on' : ''}`} disabled={!owned} onClick={() => equip('pet', p.id)} title={owned ? p.name : `Quest: ${q?.title}`}>
-                              <PetIcon kind={p.id} locked={!owned} />
+                              <PetIcon kind={p.id} locked={!owned} stage={owned ? petStage(s.history, p.id) : 0} />
                               <small>{owned ? p.name.split(' ')[0] : q?.title}</small>
+                              {owned && <small className="pet-count">{gamesWithPet(s.history, p.id)} games</small>}
                             </button>
                           );
                         })

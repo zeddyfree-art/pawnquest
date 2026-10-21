@@ -7,9 +7,10 @@ import { CrownIcon, Delta, Portrait } from '../components';
 import { useNav } from '../nav';
 import { characterRecord, lossStreak } from '../../game/progress';
 import { CHIP_LABEL } from '../../game/habits';
-import { itemById } from '../../data/gear';
+import { itemById, petById } from '../../data/gear';
+import type { PetKind } from '../hero';
 import { QUESTS } from '../../game/unlocks';
-import { GearIcon, HeroSprite } from '../components';
+import { GearIcon, HeroSprite, PetIcon } from '../components';
 import { RewardIcon, rewardsName } from './HeroScreen';
 import { jingle } from '../music';
 
@@ -104,6 +105,15 @@ export function ResultScreen() {
           <p className="crown-earned">
             <CrownIcon crown={crown} size={28} /> New {crown} crown against {c.name}!
           </p>
+        )}
+        {last.petGrew && last.record.pet && (
+          <div className="reward">
+            <PetIcon kind={last.record.pet as PetKind} stage={last.petGrew} size={48} />
+            <span>
+              <small>{last.petGrew === 2 ? '100 games together' : '25 games together'}</small>
+              <b>{last.petGrew === 2 ? `${petById(last.record.pet)?.name} grew up!` : `${petById(last.record.pet)?.name} got a little gift!`}</b>
+            </span>
+          </div>
         )}
         {last.newItems.map((id) => {
           const it = itemById(id);

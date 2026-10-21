@@ -100,3 +100,18 @@ describe('unlocks', () => {
     expect(unlocks(progress([...before, ...before])).titles.has('guardian-pieces')).toBe(false);
   });
 });
+
+describe('pets grow', () => {
+  it('an accessory at 25 games with the pet, grown up at 100; other pets and short games do not count', async () => {
+    const { petStage, nextGrowth } = await import('./pets');
+    const g = (pet: string | null, own = 20) => game({ pet, termination: 'resign', moves: Array.from({ length: own * 2 }, () => 'e2e4') });
+    expect(petStage([], 'dog')).toBe(0);
+    expect(petStage(Array.from({ length: 24 }, () => g('dog')), 'dog')).toBe(0);
+    expect(petStage([...Array.from({ length: 24 }, () => g('dog')), g('cat')], 'dog')).toBe(0);
+    expect(petStage([...Array.from({ length: 24 }, () => g('dog')), g('dog', 3)], 'dog')).toBe(0); // resigned at move 3
+    expect(petStage(Array.from({ length: 25 }, () => g('dog')), 'dog')).toBe(1);
+    expect(nextGrowth(Array.from({ length: 30 }, () => g('dog')), 'dog')).toEqual({ games: 30, of: 100 });
+    expect(petStage(Array.from({ length: 100 }, () => g('dog')), 'dog')).toBe(2);
+    expect(nextGrowth(Array.from({ length: 100 }, () => g('dog')), 'dog')).toBeNull();
+  });
+});
