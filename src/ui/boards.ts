@@ -3,7 +3,7 @@
 // the player can pick another in Profile → Settings.
 import type { WorldId } from '../data/characters';
 
-export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow';
+export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library';
 
 export interface BoardTheme {
   id: BoardThemeId;
@@ -23,6 +23,9 @@ export const BOARD_THEMES: BoardTheme[] = [
   { id: 'forest', name: 'Forest moss', light: '#dcebb5', dark: '#5e9b45', frame: '#4e6b34', texture: 'moss' },
   { id: 'obsidian', name: 'Obsidian', light: '#e3b39a', dark: '#7a5154', frame: '#2c1c24', texture: 'basalt' },
   { id: 'marble', name: 'Royal marble', light: '#f2e9f2', dark: '#9c7aa8', frame: '#5c3f66', texture: 'marble' },
+  { id: 'campfire', name: 'Campfire', light: '#f6d9a8', dark: '#c46a3a', frame: '#5a3020', texture: 'grain' },
+  { id: 'starfall', name: 'Starfall', light: '#c9d4f0', dark: '#4a5a9a', frame: '#1e2448', texture: 'marble' },
+  { id: 'library', name: 'Library', light: '#ead9b8', dark: '#7a5a42', frame: '#3b2617', texture: 'grain' },
 ];
 
 export const REGION_BOARD: Record<WorldId, BoardThemeId> = {

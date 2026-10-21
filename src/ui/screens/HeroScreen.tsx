@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { characterById, shortName } from '../../data/characters';
 import { ITEMS, PETS, SLOT_LABEL, classById, itemById, petById } from '../../data/gear';
 import { levelFor } from '../../game/progress';
-import { QUESTS, unlocks, type Reward } from '../../game/unlocks';
+import { QUEST_GROUPS, QUESTS, unlocks, type Reward } from '../../game/unlocks';
+import { TITLES } from '../../data/titles';
 import { progressOf, useSave } from '../../store/save';
 import { BOARD_THEMES, boardDataUrl } from '../boards';
 import { GearIcon, HeroSprite, PetIcon } from '../components';
@@ -17,11 +18,19 @@ type Tab = 'gear' | 'quests' | 'collection';
 export function rewardName(r: Reward): string {
   if (r.kind === 'board') return `${BOARD_THEMES.find((t) => t.id === r.id)?.name} board`;
   if (r.kind === 'pieces') return `${PIECE_SETS.find((p) => p.id === r.id)?.name} pieces`;
+  if (r.kind === 'item') return itemById(r.id)?.name ?? r.id;
+  if (r.kind === 'title') return `title “${TITLES[r.id] ?? r.id}”`;
   return petById(r.id)?.name ?? r.id;
 }
+export const rewardsName = (rs: Reward[]) => rs.map(rewardName).join(' + ');
 
 export function RewardIcon({ r, size = 36 }: { r: Reward; size?: number }) {
   if (r.kind === 'pet') return <PetIcon kind={r.id} size={size} />;
+  if (r.kind === 'item') {
+    const it = itemById(r.id);
+    return it ? <GearIcon art={it.art} size={size} /> : null;
+  }
+  if (r.kind === 'title') return <span className="title-icon" style={{ width: size, height: size }} aria-hidden="true">❧</span>;
   if (r.kind === 'pieces') return <img className="gear-icon" src={pieceDataUrl('knight', 'black', r.id)} alt="" width={size} height={size} />;
   const t = BOARD_THEMES.find((b) => b.id === r.id)!;
   return <img className="gear-icon board-icon" src={boardDataUrl(t)} alt="" width={size} height={size} />;
@@ -37,7 +46,8 @@ export function HeroScreen() {
   const u = unlocks(progress);
   if (!hero) return null;
   const lvl = levelFor(xp);
-  const questFor = (r: Reward) => QUESTS.find((q) => q.reward.kind === r.kind && q.reward.id === r.id);
+  const questFor = (r: Reward) => QUESTS.find((q) => q.rewards.some((x) => x.kind === r.kind && x.id === r.id));
+  const setTitle = (title: string | null) => s.setHero({ ...hero, title });
 
   return (
     <div className="hero-screen">
@@ -45,11 +55,12 @@ export function HeroScreen() {
         <HeroSprite hero={hero} size={160} />
         <div className="hero-card-info">
           <h1>{hero.name}</h1>
+          {hero.title && TITLES[hero.title] && <p className="hero-title">{TITLES[hero.title]}</p>}
           <p className="muted">
             {classById(hero.cls).name} · Level {lvl.level}
           </p>
           <p className="muted small">
-            {u.items.size - ITEMS.filter((i) => !i.from).length} of {ITEMS.filter((i) => i.from).length} trophies · {u.quests.size} of {QUESTS.length} quests
+            {ITEMS.filter((i) => i.from && u.items.has(i.id)).length} of {ITEMS.filter((i) => i.from).length} trophies · {u.quests.size} quests done
           </p>
           <button className="btn" onClick={() => go('create')}>
             Change look
@@ -118,34 +129,64 @@ export function HeroScreen() {
       )}
 
       {tab === 'quests' && (
-        <ul className="quests">
-          {QUESTS.map((q) => {
-            const [n, of] = q.progress(progress);
-            const done = n >= of;
+        <>
+          <div className="panel titles">
+            <h2>Title</h2>
+            <p className="muted small">Shown under your name. Earn more with quests.</p>
+            <div className="chips">
+              <button className={`chip${!hero.title ? ' on' : ''}`} onClick={() => setTitle(null)}>
+                None
+              </button>
+              {Object.entries(TITLES)
+                .filter(([id]) => u.titles.has(id))
+                .map(([id, name]) => (
+                  <button key={id} className={`chip${hero.title === id ? ' on' : ''}`} onClick={() => setTitle(id)}>
+                    {name}
+                  </button>
+                ))}
+            </div>
+          </div>
+          {QUEST_GROUPS.map((grp) => {
+            const list = QUESTS.filter((q) => q.group === grp.id && (!q.shown || q.shown(progress) || u.quests.has(q.id)));
+            const done = list.filter((q) => u.quests.has(q.id)).length;
             return (
-              <li key={q.id} className={`panel quest${done ? ' done' : ''}`}>
-                <RewardIcon r={q.reward} />
-                <span className="quest-text">
-                  <b>{q.title}</b>
-                  <small>{q.text}</small>
-                  {done ? (
-                    <small className="quest-reward">Unlocked: {rewardName(q.reward)}</small>
-                  ) : (
-                    <>
-                      <span className="bar small">
-                        <span style={{ width: `${(100 * n) / of}%` }} />
-                      </span>
-                      <small className="muted">
-                        {of > 1 ? `${n}/${of} · ` : ''}Reward: {rewardName(q.reward)}
-                      </small>
-                    </>
-                  )}
-                </span>
-                {done && <span className="check" aria-label="Done">✓</span>}
-              </li>
+              <section key={grp.id} className="quest-group">
+                <h2>
+                  {grp.name} <small className="muted">{done}/{list.length}</small>
+                </h2>
+                <p className="muted small">{grp.blurb}</p>
+                <ul className="quests">
+                  {list.map((q) => {
+                    const [n, of] = q.progress(progress);
+                    const ok = n >= of;
+                    return (
+                      <li key={q.id} className={`panel quest${ok ? ' done' : ''}`}>
+                        <RewardIcon r={q.rewards[0]} />
+                        <span className="quest-text">
+                          <b>{q.title}</b>
+                          <small>{q.text}</small>
+                          {ok ? (
+                            <small className="quest-reward">Unlocked: {rewardsName(q.rewards)}</small>
+                          ) : (
+                            <>
+                              <span className="bar small">
+                                <span style={{ width: `${(100 * n) / of}%` }} />
+                              </span>
+                              <small className="muted">
+                                {of > 1 ? `${n}/${of} · ` : ''}Reward: {rewardsName(q.rewards)}
+                              </small>
+                            </>
+                          )}
+                        </span>
+                        {ok && <span className="check" aria-label="Done">✓</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
             );
           })}
-        </ul>
+        </>
       )}
 
       {tab === 'collection' && (

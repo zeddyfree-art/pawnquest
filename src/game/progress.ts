@@ -3,6 +3,7 @@ import { CROWNS, XP } from '../config';
 import type { Faction } from '../data/characters';
 import type { Side } from './chess';
 import type { Termination } from './rules';
+import type { ReviewSummary } from '../review/summary';
 
 export interface GameRecord {
   id: string;
@@ -27,7 +28,22 @@ export interface GameRecord {
   practice?: boolean;
   /** In the history but did not change the rating (training games in v0.5). */
   unrated?: boolean;
+  /** When the game started (ISO), the player's clock time used (ms) and the pet along (from v0.7). */
+  startedAt?: string;
+  timeUsedMs?: number;
+  pet?: string | null;
+  /** Set once the game is reviewed. */
+  review?: ReviewSummary;
 }
+
+/** Board endings: the game was decided on the board, not by a resignation or the clock. */
+const BOARD_ENDS: Termination[] = ['checkmate', 'stalemate', 'insufficient', 'repetition', 'fifty-moves'];
+
+/** The player's own moves (UCI). */
+export const ownMoves = (g: GameRecord) => g.moves.filter((_, i) => (i % 2 === 0) === (g.color === 'white'));
+
+/** Counts towards "games played": not a practice game, and at least 10 own moves or decided on the board. */
+export const countsAsGame = (g: GameRecord) => !g.practice && (ownMoves(g).length >= 10 || BOARD_ENDS.includes(g.termination));
 
 export type Crown = 'none' | 'bronze' | 'silver' | 'gold';
 

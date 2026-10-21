@@ -23,12 +23,12 @@ export interface HeroLook {
   face?: 'normal' | 'skull' | 'buttons';
 }
 
-export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap' | 'mitre' | 'hornhelm' | 'tophat' | 'circlet';
+export type HeadKind = 'strawhat' | 'bandana' | 'hood' | 'witchhat' | 'helmet' | 'jester' | 'tricorn' | 'leafcrown' | 'crown' | 'wizardhat' | 'cap' | 'mitre' | 'hornhelm' | 'tophat' | 'circlet' | 'feather' | 'beanie';
 export type FaceKind = 'glasses' | 'monocle' | 'mask' | 'fangs' | 'warpaint' | 'eyepatch';
 export type BodyKind = 'tunic' | 'robe' | 'armor' | 'plate' | 'apron' | 'cloak' | 'fur' | 'vest' | 'rags' | 'jester' | 'coat' | 'burlap';
 export type LegsKind = 'trousers' | 'patched' | 'greaves';
-export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute';
-export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery';
+export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute' | 'quill';
+export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery' | 'hourglass' | 'compass' | 'pawn' | 'candle';
 
 /** How one piece of gear is drawn: its shape and colours. */
 export type GearArt =
@@ -347,6 +347,10 @@ function drawMain(cv: Canvas, g: Extract<GearArt, { slot: 'main' }>) {
       cv.part(only(minus(ellipse(x + 2, y - 4, 7, 15), ellipse(x + 3.6, y - 4, 6, 13.6)), rect(0, 0, x + 2.5, 64)), c);
       for (let yy = Math.round(y - 18); yy <= Math.round(y + 10); yy++) cv.dot(Math.round(x + 2), yy, '#efe6d6');
       break;
+    case 'quill':
+      cv.part(polygon([[x - 1, y + 1], [x - 4, y - 8], [x - 6, y - 16], [x - 3, y - 13], [x - 1, y - 6], [x + 0.5, y]]), c);
+      for (let k = 0; k < 6; k++) cv.dot(Math.round(x - 1 - k * 0.7), Math.round(y - 3 - k * 2), tone(c, -0.25));
+      break;
     case 'lute':
       cv.part(segment(x + 1, y - 2, x + 6, y - 14, 2), tone(c, -0.2));
       cv.part(ellipse(x, y + 1, 4.4, 5), c);
@@ -386,6 +390,25 @@ function drawOff(cv: Canvas, g: Extract<GearArt, { slot: 'off' }>) {
     case 'orb':
       cv.part(ellipse(x + 0.5, y - 4.5, 4, 4), c);
       cv.dot(Math.round(x - 1), Math.round(y - 7), '#ffffff');
+      break;
+    case 'hourglass':
+      cv.part(any(rect(x - 3.5, y - 10, x + 4.5, y - 8.5), rect(x - 3.5, y + 0.5, x + 4.5, y + 2)), WOOD);
+      cv.part(polygon([[x - 2.5, y - 8.5], [x + 3.5, y - 8.5], [x + 1, y - 4], [x + 3.5, y + 0.5], [x - 2.5, y + 0.5], [x, y - 4]]), '#d8eef4');
+      cv.part(any(polygon([[x - 1.2, y - 7.5], [x + 2.2, y - 7.5], [x + 0.5, y - 5]]), polygon([[x - 1.5, y + 0.5], [x + 2.5, y + 0.5], [x + 0.5, y - 2]])), c, { outline: false, rim: false });
+      break;
+    case 'compass':
+      cv.part(ellipse(x + 0.5, y - 3, 4.4, 4.4), c);
+      cv.part(ellipse(x + 0.5, y - 3, 3, 3), '#f4ead6', { outline: false, rim: false });
+      cv.dot(Math.round(x), Math.round(y - 5), '#d0443a');
+      cv.dot(Math.round(x + 1), Math.round(y - 1), '#3b2617');
+      break;
+    case 'pawn':
+      cv.part(any(ellipse(x + 0.5, y - 9, 2.2, 2.2), polygon([[x - 1.5, y - 7], [x + 2.5, y - 7], [x + 3.5, y - 1], [x - 2.5, y - 1]]), rect(x - 3.5, y - 1, x + 4.5, y + 1)), GOLD);
+      break;
+    case 'candle':
+      cv.part(ellipse(x + 0.5, y + 0.5, 4, 1.4), '#c9a04a');
+      cv.part(rect(x - 1, y - 8, x + 2, y), '#f4ead6');
+      cv.part(polygon([[x - 0.5, y - 8.5], [x + 0.5, y - 12], [x + 1.5, y - 8.5]]), '#f2b33d', { outline: false });
       break;
     case 'phylactery':
       cv.part(rect(x - 2.5, y - 9, x + 3.5, y + 0), '#b8d8d0');
@@ -468,6 +491,16 @@ function drawHeadGear(cv: Canvas, g: Extract<GearArt, { slot: 'head' }>) {
     case 'leafcrown':
       cv.part(any(...[14.5, 18, 21.5, 26.5, 30, 33.5].map((x, i) => ellipse(x, 10.5 + Math.abs(x - CX) * 0.15 - (i % 2), 2.4, 1.6))), c);
       cv.part(any(ellipse(CX, 9, 1.8, 1.8), ellipse(19.5, 9.6, 1.2, 1.2), ellipse(28.5, 9.6, 1.2, 1.2)), c2);
+      break;
+    case 'feather':
+      cv.part(only(ellipse(CX, 17, 11.4, 10.6), rect(0, 0, 48, 13)), c2);
+      cv.part(polygon([[30, 11], [34, 2], [38, -1], [36, 5], [32, 12]]), c);
+      cv.part(polygon([[32, 9], [36, 1], [37, 2], [33, 10]]), GOLD, { outline: false, rim: false });
+      break;
+    case 'beanie':
+      cv.part(only(ellipse(CX, 16.5, 11.6, 10.8), rect(0, 0, 48, 14)), c, { pattern: (x) => (x % 3 === 0 ? tone(c, -0.12) : null) });
+      cv.part(rect(12.6, 11.5, 35.4, 14.5), c2, { rim: false });
+      cv.part(ellipse(CX, 5.5, 2.6, 2.4), c2);
       break;
     case 'mitre':
       cv.part(polygon([[16, 13], [32, 13], [32, 4], [24, -2], [16, 4]]), c);

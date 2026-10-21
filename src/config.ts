@@ -30,7 +30,8 @@ export const MATCHMAKING = {
 export const CROWNS = { bronze: 1, silver: 3, gold: 5 };
 
 /** XP per game result and per crown earned. */
-export const XP = { win: 30, draw: 15, loss: 5, crown: 50, perLevel: 200 };
+/** XP per game result, per crown earned, and per good-habit chip on the result screen (two at most). */
+export const XP = { win: 30, draw: 15, loss: 5, crown: 50, habit: 10, perLevel: 200 };
 
 export type Temperament = 'chaotic' | 'human' | 'steady' | 'cold';
 

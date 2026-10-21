@@ -6,8 +6,10 @@ export interface Item {
   id: string;
   name: string;
   art: GearArt;
-  /** The opponent who drops it at your first win; absent for starting gear. */
+  /** The opponent who drops it at your first win. Items with neither `from` nor `quest` are starting gear. */
   from?: string;
+  /** Earned with a quest (see game/unlocks.ts). */
+  quest?: true;
 }
 
 export interface HeroClass {
@@ -65,6 +67,19 @@ export const ITEMS: Item[] = [
   { id: 'hellfire-staff', name: 'Hellfire Staff', from: 'witch-queen', art: { slot: 'main', kind: 'firestaff', color: '#3b2238', color2: '#f04a2a' } },
   { id: 'black-plate', name: 'Death Knight’s Plate', from: 'death-knight', art: { slot: 'body', kind: 'plate', color: '#4a4a5a', color2: '#7a1a2a' } },
   { id: 'phylactery', name: 'Phylactery', from: 'lich', art: { slot: 'off', kind: 'phylactery', color: '#7df0c8', color2: '#8a7f6a' } },
+  // Earned with quests: good habits, games played, reviews.
+  { id: 'hourglass', name: 'Hourglass', quest: true, art: { slot: 'off', kind: 'hourglass', color: '#e3c46a' } },
+  { id: 'scholar-quill', name: 'Scholar’s Quill', quest: true, art: { slot: 'main', kind: 'quill', color: '#f4f0e6' } },
+  { id: 'phoenix-feather', name: 'Phoenix Feather', quest: true, art: { slot: 'head', kind: 'feather', color: '#f07a2a', color2: '#7a4a2a' } },
+  { id: 'cozy-beanie', name: 'Cozy Beanie', quest: true, art: { slot: 'head', kind: 'beanie', color: '#5a8ae0', color2: '#f4ead6' } },
+  { id: 'compass', name: 'Compass', quest: true, art: { slot: 'off', kind: 'compass', color: '#c9a04a' } },
+  { id: 'travellers-cloak', name: 'Traveller’s Cloak', quest: true, art: { slot: 'body', kind: 'cloak', color: '#7a5a3c', color2: '#a8743f' } },
+  { id: 'golden-pawn', name: 'Golden Pawn', quest: true, art: { slot: 'off', kind: 'pawn', color: '#f2b33d' } },
+  { id: 'heros-mantle', name: 'Hero’s Mantle', quest: true, art: { slot: 'body', kind: 'cloak', color: '#b03040', color2: '#f2b33d' } },
+  { id: 'candle', name: 'Candle', quest: true, art: { slot: 'off', kind: 'candle', color: '#f4ead6' } },
+  { id: 'scholars-hood', name: 'Scholar’s Hood', quest: true, art: { slot: 'head', kind: 'hood', color: '#2f4a7a' } },
+  { id: 'grandmasters-tome', name: 'Grandmaster’s Tome', quest: true, art: { slot: 'off', kind: 'book', color: '#5b3a6e', color2: '#f2b33d' } },
+
   { id: 'bone-crown', name: 'The Necromancer’s Crown', from: 'necromancer-king', art: { slot: 'head', kind: 'crown', color: '#ece4cf', color2: '#7df0c8' } },
 ];
 
@@ -131,6 +146,8 @@ export interface Hero {
   /** Equipped item id per slot (null = nothing). */
   equip: Partial<Record<Slot, string | null>>;
   pet: PetKind | null;
+  /** A title earned with a quest (data/titles.ts), shown under the name. */
+  title?: string | null;
 }
 
 export function newHero(name: string, cls: HeroClass['id'], look: HeroLook): Hero {

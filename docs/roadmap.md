@@ -60,3 +60,13 @@ now its rating. Findings:
 - Errors (Stockfish depth 10, Lichess thresholds): about 2.5–3.4 blunders per 40 moves at 400–600 (partly the
   deliberate random moves), 1.2–2.2 at 1000–1200, about 1 at 1400–1600, 0.5–0.8 at 1800–2000 and 0.35–0.7 at
   2200 and up. Above 1000 the blunders come from Maia itself, which learned them from human games.
+
+## Rewards for how you play (from the doc "Pawnquest — Unlockables & Rewards", October 2026)
+
+Batch 1 (v0.7): quests in four groups — good habits (think first, clean game, spotless, lesson learned, never
+give up, finish the job, mate maker, bold challenger, take a breather, explorer), the road (5 to 500 games, win
+or lose), study (1 to 100 reviews, reviewed wins, ten habit breakers) and conquest (the old quests); titles with a
+picker; 11 new gear items, 3 boards and 3 piece sets; good-habit chips (+10 XP) and a kind line after three
+losses on the result screen. Reviews are summarised on the game record, so they keep counting past 50.
+Next: pets that grow, the passport, a practice log (Second chance, puzzle book), victory effects, and the
+Library (opening scrolls, chess codex, bestiary lore).
