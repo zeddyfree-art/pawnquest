@@ -28,7 +28,7 @@ export type FaceKind = 'glasses' | 'monocle' | 'mask' | 'fangs' | 'warpaint' | '
 export type BodyKind = 'tunic' | 'robe' | 'armor' | 'plate' | 'apron' | 'cloak' | 'fur' | 'vest' | 'rags' | 'jester' | 'coat' | 'burlap';
 export type LegsKind = 'trousers' | 'patched' | 'greaves';
 export type MainKind = 'sword' | 'woodsword' | 'staff' | 'club' | 'hammer' | 'torch' | 'wand' | 'firestaff' | 'bow' | 'lute' | 'quill';
-export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery' | 'hourglass' | 'compass' | 'pawn' | 'candle';
+export type OffKind = 'shield' | 'buckler' | 'book' | 'lantern' | 'egg' | 'orb' | 'phylactery' | 'hourglass' | 'compass' | 'pawn' | 'candle' | 'puzzlebox';
 
 /** How one piece of gear is drawn: its shape and colours. */
 export type GearArt =
@@ -405,6 +405,13 @@ function drawOff(cv: Canvas, g: Extract<GearArt, { slot: 'off' }>) {
     case 'pawn':
       cv.part(any(ellipse(x + 0.5, y - 9, 2.2, 2.2), polygon([[x - 1.5, y - 7], [x + 2.5, y - 7], [x + 3.5, y - 1], [x - 2.5, y - 1]]), rect(x - 3.5, y - 1, x + 4.5, y + 1)), GOLD);
       break;
+    case 'puzzlebox': {
+      // A little wooden cube with a chequered lid.
+      cv.part(rect(x - 3.5, y - 6, x + 4.5, y + 1), WOOD);
+      for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) if ((i + j) % 2 === 0) cv.part(rect(x - 3.5 + 2 * i, y - 6 + 2 * j, x - 1.5 + 2 * i, y - 4 + 2 * j), c, { outline: false, rim: false });
+      cv.part(rect(x - 3.5, y - 0.6, x + 4.5, y + 1), tone(WOOD, -0.25), { outline: false, rim: false });
+      break;
+    }
     case 'candle':
       cv.part(ellipse(x + 0.5, y + 0.5, 4, 1.4), '#c9a04a');
       cv.part(rect(x - 1, y - 8, x + 2, y), '#f4ead6');
@@ -616,9 +623,11 @@ export type PetKind = 'chick' | 'cat' | 'dog' | 'frog' | 'owl' | 'fox' | 'slime'
 
 /** A pet grows with you: 0 as found, 1 with an accessory (25 games together), 2 grown up (100 games). */
 export type PetStage = 0 | 1 | 2;
+/** Professor Hoot also learns with you: reading glasses after 10 reviews, a graduation cap after 50. */
+export type Scholar = 0 | 1 | 2;
 export const petSize = (stage: PetStage) => (stage === 2 ? 26 : PET_SIZE);
 
-export function renderPet(kind: PetKind, stage: PetStage = 0): (string | null)[] {
+export function renderPet(kind: PetKind, stage: PetStage = 0, scholar: Scholar = 0): (string | null)[] {
   // Drawn in a 20-pixel design space; the grown form is the same drawing 1.3 times larger on a 26-pixel canvas.
   const N = petSize(stage);
   const k = stage === 2 ? 1.3 : 1;
@@ -749,6 +758,15 @@ export function renderPet(kind: PetKind, stage: PetStage = 0): (string | null)[]
         break;
     }
   }
+  if (kind === 'owl' && scholar >= 1) {
+    const ring = (x: number) => minus(E(x, 9.6, 2.5, 2.5), E(x, 9.6, 1.7, 1.7));
+    cv.part(any(ring(7.6), ring(12.4), Sg(9.8, 9.4, 10.2, 9.4, 0.8)), '#3b2617', { outline: false, rim: false });
+  }
+  if (kind === 'owl' && scholar === 2) {
+    cv.part(R(7.2, 4.2, 12.8, 6.2), '#2b2238', { rim: false });
+    cv.part(P([[4.4, 4.2], [10, 1.6], [15.6, 4.2], [10, 6]]), '#3b3550');
+    cv.part(Sg(14.6, 4.2, 15.2, 8, 0.7), GOLD, { outline: false, rim: false });
+  }
   return cv.px;
 }
 
@@ -772,8 +790,9 @@ export function gearIconUrl(art: GearArt): string {
   });
 }
 
-export function petUrl(kind: PetKind, stage: PetStage = 0): string {
-  return memo(`pet:${kind}:${stage}`, () => pixelsToUrl(renderPet(kind, stage), petSize(stage), petSize(stage)));
+export function petUrl(kind: PetKind, stage: PetStage = 0, scholar: Scholar = 0): string {
+  const sc = kind === 'owl' ? scholar : 0;
+  return memo(`pet:${kind}:${stage}:${sc}`, () => pixelsToUrl(renderPet(kind, stage, sc), petSize(stage), petSize(stage)));
 }
 
 const ICON_LOOK: HeroLook = { skin: '#efc29a', hair: '#5a3a22', hairStyle: 'none', eyes: '#2b2238' };

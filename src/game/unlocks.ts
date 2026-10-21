@@ -2,7 +2,7 @@
 // on another version, unlocks the same things): gear from first wins, and quests that give boards, piece sets,
 // pets, gear and titles. Quests reward how a player plays and learns (good habits, games played, reviews), not
 // only winning; nothing expires and nothing is taken away.
-import { characterById } from '../data/characters';
+import { CHARACTERS, characterById, WORLDS, type WorldId } from '../data/characters';
 import { ITEMS, type Item } from '../data/gear';
 import type { BoardThemeId } from '../ui/boards';
 import type { PetKind } from '../ui/hero';
@@ -31,6 +31,8 @@ export interface Progress {
   /** How many games have been reviewed. */
   reviews: number;
   peak: number;
+  /** Puzzles from the puzzle book: solved, and solved at the first try. */
+  puzzles: { solved: number; firstTry: number };
 }
 
 export interface Quest {
@@ -106,6 +108,16 @@ const habitBreaker = (id: string, kinds: string[], title: string, mistake: strin
   },
   shown: (p) => kindShare(p.history, kinds).before >= 2 || reviewed(p.history).some((g) => g.review!.kinds.some((x) => kinds.includes(x))),
 });
+/** The regions of the map where the player has played a game (win or lose): the stamps in the passport. */
+export function regionsVisited(h: readonly GameRecord[]): Set<WorldId> {
+  const out = new Set<WorldId>();
+  for (const g of h) {
+    const w = characterById(g.characterId)?.world;
+    if (w && countsAsGame(g)) out.add(w);
+  }
+  return out;
+}
+const metEveryone = (h: readonly GameRecord[]) => new Set(h.filter(countsAsGame).map((g) => g.characterId)).size;
 const distinctWinsOf = (h: readonly GameRecord[], faction: string) => new Set(wins(h).filter((g) => g.faction === faction).map((g) => g.characterId)).size;
 const count = (n: number, of: number): [number, number] => [Math.min(n, of), of];
 
@@ -159,6 +171,13 @@ export const QUESTS: Quest[] = [
   { group: 'study', id: 'reviews-50', title: 'Sage', text: 'Review 50 games.', rewards: [{ kind: 'pieces', id: 'ink' }], progress: (p) => count(p.reviews, 50) },
   { group: 'study', id: 'reviews-100', title: 'Grandmaster’s Tome', text: 'Review 100 games.', rewards: [{ kind: 'item', id: 'grandmasters-tome' }, { kind: 'title', id: 'wise-owl' }], progress: (p) => count(p.reviews, 100) },
   { group: 'study', id: 'review-wins', title: 'Even winners look back', text: 'Review 3 games you won.', rewards: [{ kind: 'title', id: 'thorough' }], progress: (p) => count(reviewed(p.history).filter((g) => g.score === 1).length, 3) },
+  { group: 'journey', id: 'passport', title: 'A full passport', text: 'Play a game in every region of the map, win or lose: a stamp for each.', rewards: [{ kind: 'board', id: 'maptable' }], progress: (p) => count(regionsVisited(p.history).size, WORLDS.length) },
+  { group: 'journey', id: 'friend-realm', title: 'Friend of the Realm', text: `Play a game against every one of the ${CHARACTERS.length} characters, win or lose.`, rewards: [{ kind: 'title', id: 'friend-realm' }], progress: (p) => count(metEveryone(p.history), CHARACTERS.length) },
+  // Study: the puzzle book (the better moves from your reviews).
+  { group: 'study', id: 'second-chance', title: 'Second chance', text: 'Find the better move at the first try in 5 puzzles from your reviews.', rewards: [{ kind: 'item', id: 'training-sword' }, { kind: 'title', id: 'second-chance' }], progress: (p) => count(p.puzzles.firstTry, 5) },
+  { group: 'study', id: 'puzzles-10', title: 'Puzzle solver', text: 'Solve 10 puzzles from your puzzle book.', rewards: [{ kind: 'title', id: 'puzzle-solver' }], progress: (p) => count(p.puzzles.solved, 10) },
+  { group: 'study', id: 'puzzles-25', title: 'Chequered study', text: 'Solve 25 puzzles from your puzzle book.', rewards: [{ kind: 'board', id: 'chequered' }], progress: (p) => count(p.puzzles.solved, 25) },
+  { group: 'study', id: 'puzzles-50', title: 'Puzzle master', text: 'Solve 50 puzzles from your puzzle book.', rewards: [{ kind: 'item', id: 'puzzle-box' }], progress: (p) => count(p.puzzles.solved, 50) },
   habitBreaker('hanging', ['Hanging piece'], 'guardian-pieces', 'Hanging piece'),
   habitBreaker('allowed-mate', ['Allowed mate'], 'kings-shield', 'Allowed mate'),
   habitBreaker('missed-mate', ['Missed mate'], 'mate-spotter', 'Missed mate'),

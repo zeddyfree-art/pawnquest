@@ -30,7 +30,11 @@ function RatingChart({ points }: { points: number[] }) {
 }
 
 export function ProfileScreen() {
-  const { rating, peak, xp, history, reviews, settings, setSettings, importSave, resetAll } = useSave();
+  const { rating, peak, xp, history, reviews, settings, setSettings, importSave, resetAll, puzzles, puzzleLog } = useSave();
+  const solve = useNav((s) => s.solve);
+  // Unsolved puzzles, newest first; then the solved ones to go over again.
+  const open = puzzles.filter((p) => !puzzleLog[p.id]?.solved).reverse();
+  const solved = puzzles.filter((p) => puzzleLog[p.id]?.solved).reverse();
   const pat = mistakePatterns(reviews, history);
   const top = pat.themes.slice(0, 3);
   const [msg, setMsg] = useState<string | null>(null);
@@ -118,6 +122,34 @@ export function ProfileScreen() {
           </>
         )}
       </div>
+      <div className="panel puzzle-book">
+        <h2>Puzzle book</h2>
+        {puzzles.length ? (
+          <>
+            <p className="muted small">The better moves you missed in your reviewed games. Find them yourself: hints come in steps.</p>
+            <div className="puzzle-counts">
+              <span>
+                <b className="pixel">{open.length}</b> to solve
+              </span>
+              <span>
+                <b className="pixel">{solved.length}</b> solved
+              </span>
+            </div>
+            <div className="actions left">
+              <button className="btn primary" onClick={() => solve(open.map((p) => p.id))} disabled={!open.length}>
+                {open.length ? `Solve puzzles (${open.length})` : 'All solved!'}
+              </button>
+              {solved.length > 0 && (
+                <button className="btn" onClick={() => solve(solved.map((p) => p.id))}>
+                  Go over solved ones
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <p className="muted">Review a game, and every clear mistake in it becomes a puzzle here: find the better move yourself.</p>
+        )}
+      </div>
       <div className="panel">
         <h2>Recent games</h2>
         {recent.length ? (
@@ -132,9 +164,15 @@ export function ProfileScreen() {
                     {g.ratingAfter - g.ratingBefore}
                   </small>
                 </span>
-                <button className="btn" onClick={() => review(g.id)} disabled={g.moves.length < 2}>
-                  Review
-                </button>
+                {g.review ? (
+                  <button className="btn reviewed" onClick={() => review(g.id)} aria-label="Reviewed: see the review">
+                    ✓ Reviewed
+                  </button>
+                ) : (
+                  <button className="btn" onClick={() => review(g.id)} disabled={g.moves.length < 2}>
+                    Review
+                  </button>
+                )}
               </li>
             ))}
           </ul>

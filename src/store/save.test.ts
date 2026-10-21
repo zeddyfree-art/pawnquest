@@ -30,4 +30,16 @@ describe('save', () => {
     expect(() => parseSave('{"hello":1}')).toThrow('not a Pawnquest save file');
     expect(() => parseSave('nope')).toThrow();
   });
+
+  it('logs puzzles: XP once per solved puzzle, quests from first tries', () => {
+    const solveOne = (id: string, firstTry: boolean) => useSave.getState().logPuzzle(id, true, firstTry);
+    expect(solveOne('a', true)).toEqual([]);
+    expect(useSave.getState().xp).toBe(5);
+    solveOne('a', true); // again: no more XP
+    expect(useSave.getState().xp).toBe(5);
+    for (const id of ['b', 'c', 'd']) solveOne(id, true);
+    expect(solveOne('e', true)).toContain('second-chance');
+    expect(useSave.getState().logPuzzle('f', false, false)).toEqual([]);
+    expect(useSave.getState().puzzleLog.f).toMatchObject({ solved: false });
+  });
 });

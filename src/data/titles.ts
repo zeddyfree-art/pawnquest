@@ -23,4 +23,7 @@ export const TITLES: Record<string, string> = {
   'sharp-eye': 'Sharp Eye',
   watchtower: 'Watchtower',
   closer: 'the Closer',
+  'friend-realm': 'Friend of the Realm',
+  'puzzle-solver': 'Puzzle Solver',
+  'second-chance': 'Second Chance',
 };

@@ -1,13 +1,14 @@
 // Your hero: what they wear (six slots and a pet), the quests that unlock boards, piece sets and pets, and the
 // collection of boards and pieces to play with.
 import { useState } from 'react';
-import { characterById, shortName } from '../../data/characters';
+import { characterById, shortName, WORLDS } from '../../data/characters';
 import { ITEMS, PETS, SLOT_LABEL, classById, itemById, petById } from '../../data/gear';
 import { levelFor } from '../../game/progress';
-import { QUEST_GROUPS, QUESTS, unlocks, type Reward } from '../../game/unlocks';
+import { QUEST_GROUPS, QUESTS, regionsVisited, unlocks, type Reward } from '../../game/unlocks';
 import { TITLES } from '../../data/titles';
-import { gamesWithPet, nextGrowth, petStage } from '../../game/pets';
-import { PET_GROWTH } from '../../config';
+import { gamesWithPet, nextGrowth, owlScholar, petStage } from '../../game/pets';
+import { OWL_STUDY, PET_GROWTH } from '../../config';
+import { EFFECTS, effectFor } from '../victory';
 import { progressOf, useSave } from '../../store/save';
 import { BOARD_THEMES, boardDataUrl } from '../boards';
 import { GearIcon, HeroSprite, PetIcon } from '../components';
@@ -41,9 +42,15 @@ export function RewardIcon({ r, size = 36 }: { r: Reward; size?: number }) {
 /** "12 of 25 games together: then a scarf", or "All grown up". */
 function growthText(history: Parameters<typeof petStage>[0], pet: string): string {
   const next = nextGrowth(history, pet);
-  if (!next) return 'All grown up! 100+ games together';
-  return `${next.games} of ${next.of} games together: ${next.of === PET_GROWTH.accessory ? 'then a little gift' : 'then it grows up'}`;
+  const games = !next ? 'All grown up! 100+ games together' : `${next.games} of ${next.of} games together: ${next.of === PET_GROWTH.accessory ? 'then a little gift' : 'then it grows up'}`;
+  if (pet !== 'owl') return games;
+  const reviews = history.filter((g) => g.review).length;
+  const study = reviews >= OWL_STUDY.cap ? 'Graduated!' : reviews >= OWL_STUDY.glasses ? `${reviews} of ${OWL_STUDY.cap} reviews: then a graduation cap` : `${reviews} of ${OWL_STUDY.glasses} reviews: then reading glasses`;
+  return `${games} · ${study}`;
 }
+
+/** Region colours for the passport stamps. */
+const STAMP: Record<string, string> = { training: '#7a8a3a', gutter: '#6a5a4a', village: '#a8642a', castle: '#3f6aa8', wilds: '#3f7a3a', underworld: '#a83a3a', throne: '#6a3f8a' };
 
 export function HeroScreen() {
   const s = useSave();
@@ -57,6 +64,9 @@ export function HeroScreen() {
   const lvl = levelFor(xp);
   const questFor = (r: Reward) => QUESTS.find((q) => q.rewards.some((x) => x.kind === r.kind && x.id === r.id));
   const setTitle = (title: string | null) => s.setHero({ ...hero, title });
+  const visited = regionsVisited(s.history);
+  const scholar = owlScholar(s.history);
+  const effectNow = effectFor(settings.victoryEffect, lvl.level);
 
   return (
     <div className="hero-screen">
@@ -95,7 +105,7 @@ export function HeroScreen() {
             return (
               <div key={slot} className="slot">
                 <button className="slot-row" aria-expanded={open === slot} onClick={() => setOpen(open === slot ? null : slot)}>
-                  <span className="slot-icon">{worn ? <GearIcon art={worn.art} /> : pet ? <PetIcon kind={pet.id} stage={petStage(s.history, pet.id)} /> : null}</span>
+                  <span className="slot-icon">{worn ? <GearIcon art={worn.art} /> : pet ? <PetIcon kind={pet.id} stage={petStage(s.history, pet.id)} scholar={scholar} /> : null}</span>
                   <span className="slot-text">
                     <small>{isPet ? 'Pet' : SLOT_LABEL[slot]}</small>
                     <b>{worn?.name ?? pet?.name ?? 'Nothing'}</b>
@@ -115,7 +125,7 @@ export function HeroScreen() {
                           const q = questFor({ kind: 'pet', id: p.id });
                           return (
                             <button key={p.id} className={`pick${hero.pet === p.id ? ' on' : ''}`} disabled={!owned} onClick={() => equip('pet', p.id)} title={owned ? p.name : `Quest: ${q?.title}`}>
-                              <PetIcon kind={p.id} locked={!owned} stage={owned ? petStage(s.history, p.id) : 0} />
+                              <PetIcon kind={p.id} locked={!owned} stage={owned ? petStage(s.history, p.id) : 0} scholar={owned ? scholar : 0} />
                               <small>{owned ? p.name.split(' ')[0] : q?.title}</small>
                               {owned && <small className="pet-count">{gamesWithPet(s.history, p.id)} games</small>}
                             </button>
@@ -141,6 +151,28 @@ export function HeroScreen() {
 
       {tab === 'quests' && (
         <>
+          <div className="panel passport">
+            <h2>
+              Passport <small className="muted">{visited.size}/{WORLDS.length}</small>
+            </h2>
+            <p className="muted small">A stamp for every region where you have played a game, win or lose. A full passport unlocks the Map Table board.</p>
+            <div className="passport-stamps">
+              {WORLDS.map((w, i) =>
+                visited.has(w.id) ? (
+                  <span key={w.id} className="stamp" style={{ ['--sc' as string]: STAMP[w.id], ['--rot' as string]: `${((i * 37) % 17) - 8}deg` }}>
+                    <span>
+                      {w.name.replace(/^The /, '')}
+                      <small>visited</small>
+                    </span>
+                  </span>
+                ) : (
+                  <span key={w.id} className="stamp empty" aria-label={`${w.name}: not visited yet`}>
+                    ?
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
           <div className="panel titles">
             <h2>Title</h2>
             <p className="muted small">Shown under your name. Earn more with quests.</p>
@@ -219,6 +251,23 @@ export function HeroScreen() {
                   </button>
                 );
               })}
+            </div>
+          </div>
+          <div className="panel">
+            <h2>Victory effect</h2>
+            <p className="muted small">Plays after a win (unless motion is off). One more unlocks at levels {EFFECTS.map((e) => e.level).join(', ')}.</p>
+            <div className="chips">
+              <button className={`chip${settings.victoryEffect === 'auto' ? ' on' : ''}`} onClick={() => setSettings({ victoryEffect: 'auto' })}>
+                Newest{settings.victoryEffect === 'auto' && effectNow ? `: ${EFFECTS.find((e) => e.id === effectNow)?.name}` : ''}
+              </button>
+              <button className={`chip${settings.victoryEffect === 'none' ? ' on' : ''}`} onClick={() => setSettings({ victoryEffect: 'none' })}>
+                None
+              </button>
+              {EFFECTS.map((e) => (
+                <button key={e.id} className={`chip${settings.victoryEffect === e.id ? ' on' : ''}`} disabled={lvl.level < e.level} onClick={() => setSettings({ victoryEffect: e.id })}>
+                  {lvl.level < e.level ? `${e.name} · level ${e.level}` : e.name}
+                </button>
+              ))}
             </div>
           </div>
           <div className="panel">

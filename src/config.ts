@@ -31,9 +31,11 @@ export const CROWNS = { bronze: 1, silver: 3, gold: 5 };
 
 /** Pets grow with the games played together: an accessory, then the grown-up form. */
 export const PET_GROWTH = { accessory: 25, grown: 100 };
+/** Professor Hoot's study: reading glasses after this many reviews, a graduation cap after that many. */
+export const OWL_STUDY = { glasses: 10, cap: 50 };
 
-/** XP per game result, per crown earned, and per good-habit chip on the result screen (two at most). */
-export const XP = { win: 30, draw: 15, loss: 5, crown: 50, habit: 10, perLevel: 200 };
+/** XP per game result, per crown earned, per good-habit chip on the result screen (two at most), and per puzzle solved. */
+export const XP = { win: 30, draw: 15, loss: 5, crown: 50, habit: 10, puzzle: 5, perLevel: 200 };
 
 export type Temperament = 'chaotic' | 'human' | 'steady' | 'cold';
 

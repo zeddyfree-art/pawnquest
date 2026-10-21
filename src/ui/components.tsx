@@ -7,8 +7,8 @@ import { LOOKS } from '../data/looks';
 import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
 import { outfitOf, type Hero } from '../data/gear';
-import { gearIconUrl, heroUrl, HERO_H, HERO_W, petSize, petUrl, type GearArt, type HeroMood, type PetKind, type PetStage } from './hero';
-import { petStage } from '../game/pets';
+import { gearIconUrl, heroUrl, HERO_H, HERO_W, petSize, petUrl, type GearArt, type HeroMood, type PetKind, type PetStage, type Scholar } from './hero';
+import { owlScholar, petStage } from '../game/pets';
 import { useSave } from '../store/save';
 
 export type { Mood };
@@ -98,11 +98,13 @@ export function Material({ roles, color, plus }: { roles: Role[]; color: 'white'
 /** The player's hero, full figure, with their pet beside them. `size` is the figure's height in CSS pixels. */
 export function HeroSprite({ hero, size = 128, mood = 'idle', pet = true, className = '' }: { hero: Hero; size?: number; mood?: HeroMood; pet?: boolean; className?: string }) {
   const scale = size / HERO_H;
-  const stage = petStage(useSave((s) => s.history), hero.pet);
+  const history = useSave((s) => s.history);
+  const stage = petStage(history, hero.pet);
+  const scholar = owlScholar(history);
   return (
     <span className={`hero-sprite ${className}`} style={{ height: size }} aria-hidden="true">
       <img src={heroUrl(hero.look, outfitOf(hero), mood)} alt="" width={HERO_W * scale} height={size} />
-      {pet && hero.pet && <img className="pet" src={petUrl(hero.pet, stage)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
+      {pet && hero.pet && <img className="pet" src={petUrl(hero.pet, stage, scholar)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
     </span>
   );
 }
@@ -124,6 +126,6 @@ export function GearIcon({ art, size = 40, locked = false }: { art: GearArt; siz
   return <img className={`gear-icon${locked ? ' locked' : ''}`} src={gearIconUrl(art)} alt="" width={size} height={size} />;
 }
 
-export function PetIcon({ kind, size = 40, locked = false, stage = 0 }: { kind: PetKind; size?: number; locked?: boolean; stage?: PetStage }) {
-  return <img className={`gear-icon${locked ? ' locked' : ''}`} src={petUrl(kind, stage)} alt="" width={size} height={size} />;
+export function PetIcon({ kind, size = 40, locked = false, stage = 0, scholar = 0 }: { kind: PetKind; size?: number; locked?: boolean; stage?: PetStage; scholar?: Scholar }) {
+  return <img className={`gear-icon${locked ? ' locked' : ''}`} src={petUrl(kind, stage, scholar)} alt="" width={size} height={size} />;
 }

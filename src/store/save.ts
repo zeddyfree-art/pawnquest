@@ -18,6 +18,7 @@ import { newUnlocks, type Progress } from '../game/unlocks';
 import { summarizeReview } from '../review/summary';
 import { habitChips } from '../game/habits';
 import { petStage } from '../game/pets';
+import { puzzleCounts, puzzlesFrom, type Puzzle, type PuzzleTry } from '../review/puzzles';
 
 export interface ActiveGame {
   id: string;
@@ -46,6 +47,8 @@ export interface Settings {
   /** Background music per region, and its volume (0–1). */
   music: boolean;
   musicVolume: number;
+  /** The effect after a win: 'auto' = the newest one unlocked, 'none', or one by id. */
+  victoryEffect: string;
 }
 
 export interface SaveData {
@@ -60,6 +63,9 @@ export interface SaveData {
   reviews: Record<string, GameReview>;
   /** The player's own character (null until it is made). */
   hero: Hero | null;
+  /** The puzzle book: better moves from reviews, and how each attempt went. */
+  puzzles: Puzzle[];
+  puzzleLog: Record<string, PuzzleTry>;
 }
 
 export const NEW_SAVE: SaveData = {
@@ -69,9 +75,11 @@ export const NEW_SAVE: SaveData = {
   xp: 0,
   history: [],
   active: null,
-  settings: { sound: true, motion: true, boardTheme: 'region', pieceSet: 'classic', music: true, musicVolume: 0.35 },
+  settings: { sound: true, motion: true, boardTheme: 'region', pieceSet: 'classic', music: true, musicVolume: 0.35, victoryEffect: 'auto' },
   reviews: {},
   hero: null,
+  puzzles: [],
+  puzzleLog: {},
 };
 
 /** Reviews kept per save (the oldest are dropped). */
@@ -85,6 +93,8 @@ interface Store extends SaveData {
   lastResult: { record: GameRecord; xpGained: number; crownEarned: boolean; newItems: string[]; newQuests: string[]; chips: string[]; petGrew?: 1 | 2 } | null;
   startGame(characterId: string, color: Side, auto: boolean, opts?: { startFen?: string; practice?: boolean }): void;
   setReview(gameId: string, review: GameReview): void;
+  /** Records a puzzle attempt; returns the quests it completed. */
+  logPuzzle(id: string, solved: boolean, firstTry: boolean): string[];
   updateActive(patch: Partial<ActiveGame>): void;
   finishGame(result: Result): void;
   abandonActive(): void;
@@ -104,19 +114,38 @@ function timeUsed(a: ActiveGame, now: number): number {
   return Math.max(0, CLOCK.minutes * 60_000 + timed * CLOCK.incrementSeconds * 1000 - timeLeft(a.clock, a.color, now));
 }
 
-/** Old saves: summarise reviews that were stored before summaries existed. */
+/** Old saves: summarise reviews that were stored before summaries existed, and fill the puzzle book from them. */
 function withSummaries(d: SaveData): SaveData {
-  if (!d.history.some((g) => !g.review && d.reviews[g.id])) return d;
-  return { ...d, history: d.history.map((g) => (!g.review && d.reviews[g.id] ? { ...g, review: summarizeReview(d.reviews[g.id], firstMover(g)) } : g)) };
+  let out = d;
+  if (d.history.some((g) => !g.review && d.reviews[g.id])) out = { ...out, history: d.history.map((g) => (!g.review && d.reviews[g.id] ? { ...g, review: summarizeReview(d.reviews[g.id], firstMover(g)) } : g)) };
+  const known = new Set(out.puzzles.map((p) => p.gameId));
+  const missing = out.history.filter((g) => !known.has(g.id) && out.reviews[g.id]);
+  if (missing.length) out = { ...out, puzzles: [...out.puzzles, ...missing.flatMap((g) => puzzlesFrom(out.reviews[g.id], g))] };
+  return out;
+}
+
+/** Puzzles kept per save (the oldest unsolved ones are dropped first). */
+const MAX_PUZZLES = 500;
+function addPuzzles(list: Puzzle[], add: Puzzle[], log: Record<string, PuzzleTry>): Puzzle[] {
+  const ids = new Set(list.map((p) => p.id));
+  const all = [...list, ...add.filter((p) => !ids.has(p.id))];
+  if (all.length <= MAX_PUZZLES) return all;
+  const drop = new Set(all.filter((p) => !log[p.id]?.solved).slice(0, all.length - MAX_PUZZLES).map((p) => p.id));
+  return all.filter((p) => !drop.has(p.id));
 }
 
 const db = typeof indexedDB !== 'undefined' ? createStore('pawnquest', 'save') : undefined;
 const KEY = 'save-v1';
 
-const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews, hero: s.hero });
+const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews, hero: s.hero, puzzles: s.puzzles, puzzleLog: s.puzzleLog });
 
 /** What the unlocks are computed from. */
-export const progressOf = (s: Pick<SaveData, 'history' | 'peak'>): Progress => ({ history: s.history, reviews: s.history.filter((g) => g.review).length, peak: s.peak });
+export const progressOf = (s: Pick<SaveData, 'history' | 'peak'> & { puzzleLog?: Record<string, PuzzleTry> }): Progress => ({
+  history: s.history,
+  reviews: s.history.filter((g) => g.review).length,
+  peak: s.peak,
+  puzzles: puzzleCounts(s.puzzleLog ?? {}),
+});
 
 export const useSave = create<Store>()((setState, getState) => ({
   ...NEW_SAVE,
@@ -185,7 +214,7 @@ export const useSave = create<Store>()((setState, getState) => ({
     const chips = habitChips(record, s.history);
     const xpGained = xpForGame(score, crownBefore, crownAfter) + chips.length * XP.habit;
     const peak = Math.max(s.peak, record.ratingAfter);
-    const fresh = newUnlocks(progressOf(s), progressOf({ history, peak }));
+    const fresh = newUnlocks(progressOf(s), progressOf({ history, peak, puzzleLog: s.puzzleLog }));
     setState({
       history,
       rating: record.ratingAfter,
@@ -211,8 +240,21 @@ export const useSave = create<Store>()((setState, getState) => ({
     // The summary stays on the game record, so quests keep counting it after the full review is pruned.
     const before = progressOf(s);
     const history = s.history.map((g) => (g.id === gameId ? { ...g, review: summarizeReview(review, firstMover(g)) } : g));
-    const fresh = newUnlocks(before, progressOf({ history, peak: s.peak }));
-    setState({ reviews, history, reviewUnlocks: { gameId, quests: fresh.quests.map((q) => q.id) } });
+    const fresh = newUnlocks(before, progressOf({ history, peak: s.peak, puzzleLog: s.puzzleLog }));
+    const game = history.find((g) => g.id === gameId);
+    const puzzles = game ? addPuzzles(s.puzzles, puzzlesFrom(review, game), s.puzzleLog) : s.puzzles;
+    setState({ reviews, history, puzzles, reviewUnlocks: { gameId, quests: fresh.quests.map((q) => q.id) } });
+  },
+
+  logPuzzle(id, solved, firstTry) {
+    const s = getState();
+    const was = s.puzzleLog[id];
+    if (was?.solved && (was.firstTry || !firstTry)) return [];
+    const puzzleLog = { ...s.puzzleLog, [id]: { solved: solved || !!was?.solved, firstTry: firstTry || !!was?.firstTry, date: new Date().toISOString() } };
+    const fresh = newUnlocks(progressOf(s), progressOf({ ...s, puzzleLog }));
+    const xp = solved && !was?.solved ? XP.puzzle : 0;
+    setState({ puzzleLog, xp: s.xp + xp });
+    return fresh.quests.map((q) => q.id);
   },
 
   abandonActive() {
@@ -253,7 +295,7 @@ export function parseSave(json: string): SaveData {
     throw new Error('This is not a Pawnquest save file.');
   }
   if (!d || d.version !== 1 || typeof d.rating !== 'number' || !Array.isArray(d.history)) throw new Error('This is not a Pawnquest save file.');
-  return withSummaries({ ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) }, reviews: d.reviews ?? {}, hero: d.hero ?? null } as SaveData);
+  return withSummaries({ ...NEW_SAVE, ...d, settings: { ...NEW_SAVE.settings, ...(d.settings ?? {}) }, reviews: d.reviews ?? {}, hero: d.hero ?? null, puzzles: d.puzzles ?? [], puzzleLog: d.puzzleLog ?? {} } as SaveData);
 }
 
 export function exportSave(): string {
@@ -269,7 +311,7 @@ async function write() {
 
 export async function loadSave() {
   const stored = db ? await get<SaveData>(KEY, db).catch(() => undefined) : undefined;
-  useSave.setState({ ...(stored ? withSummaries({ ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings }, reviews: stored.reviews ?? {}, hero: stored.hero ?? null }) : NEW_SAVE), loaded: true });
+  useSave.setState({ ...(stored ? withSummaries({ ...NEW_SAVE, ...stored, settings: { ...NEW_SAVE.settings, ...stored.settings }, reviews: stored.reviews ?? {}, hero: stored.hero ?? null, puzzles: stored.puzzles ?? [], puzzleLog: stored.puzzleLog ?? {} }) : NEW_SAVE), loaded: true });
   useSave.subscribe(() => {
     if (queued) return;
     queued = true;
