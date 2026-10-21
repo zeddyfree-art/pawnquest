@@ -53,6 +53,16 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
 - **Music** (v0.6): a tune for the map and one per region in a fight, crossfaded, with jingles for the result
   and for new rewards; Music and volume in Settings.
 
+- **Rewards for how you play** (v0.7): quests for good habits, games played (win or lose) and reviews; titles;
+  pets that grow with you (a little gift after 25 games together, grown up after 100).
+- **Puzzle book** (v0.8): every clear mistake in a reviewed game becomes a puzzle: find the better move yourself,
+  with hints in steps (the piece to move, the idea, then the move). On the profile, and "Find it yourself" on each
+  key moment of a review. Quests: *Second chance* (5 at the first try) and 10, 25 and 50 solved.
+- **Also in v0.8**: a passport with a stamp per region you have played in (a full one gives the Map Table board),
+  *Friend of the Realm* for a game against all 32 characters, a victory effect after a win (one more at levels 3,
+  5, 8, 12, 16 and 20, picked on the Hero screen), Professor Hoot's reading glasses (10 reviews) and graduation
+  cap (50), and a green "✓ Reviewed" on games you have already reviewed.
+
 Next: (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
 
 ## Develop

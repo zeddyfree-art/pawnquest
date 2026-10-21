@@ -27,9 +27,11 @@ interface Props {
   lastMove: [string, string] | null;
   onMove?: (orig: string, dest: string) => void;
   arrows?: Arrow[];
+  /** Squares to circle (a hint: the piece to move). */
+  circles?: { square: string; brush: keyof typeof BRUSHES }[];
 }
 
-export function Board({ pos, orientation, movable, lastMove, onMove, arrows }: Props) {
+export function Board({ pos, orientation, movable, lastMove, onMove, arrows, circles }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
   const onMoveRef = useRef(onMove);
@@ -70,8 +72,10 @@ export function Board({ pos, orientation, movable, lastMove, onMove, arrows }: P
   }, [pos, orientation, movable, lastMove]);
 
   useEffect(() => {
-    api.current?.setAutoShapes((arrows ?? []).map((a) => ({ orig: a.from as Key, dest: a.to as Key, brush: a.brush }) as DrawShape));
-  }, [arrows, pos]);
+    const shapes = (arrows ?? []).map((a) => ({ orig: a.from as Key, dest: a.to as Key, brush: a.brush }) as DrawShape);
+    for (const c of circles ?? []) shapes.push({ orig: c.square as Key, brush: c.brush } as DrawShape);
+    api.current?.setAutoShapes(shapes);
+  }, [arrows, circles, pos]);
 
   return <div ref={el} className="board" />;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { characterById, REACTIONS, shortName } from '../../data/characters';
 import { levelFor } from '../../game/progress';
 import { describeResult } from '../../game/rules';
@@ -13,6 +13,7 @@ import { QUESTS } from '../../game/unlocks';
 import { GearIcon, HeroSprite, PetIcon } from '../components';
 import { RewardIcon, rewardsName } from './HeroScreen';
 import { jingle } from '../music';
+import { effectFor, playVictory } from '../victory';
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -25,6 +26,15 @@ export function ResultScreen() {
   const rec = last?.record;
   const c = rec && characterById(rec.characterId);
   const [shown, setShown] = useState(rec?.ratingBefore ?? 0);
+  const settings = useSave((s) => s.settings);
+  const fx = useRef<HTMLCanvasElement>(null);
+
+  // A victory effect after a win (the newest one unlocked, or the one picked on the Hero screen).
+  const effect = rec && rec.score === 1 && !rec.practice && settings.motion && !reducedMotion() ? effectFor(settings.victoryEffect, levelFor(xp).level) : null;
+  useEffect(() => {
+    if (!effect || !fx.current) return;
+    return playVictory(fx.current, effect);
+  }, [effect, rec?.id]);
 
   // A jingle for new gear or a completed quest, after the result's own.
   useEffect(() => {
@@ -73,6 +83,7 @@ export function ResultScreen() {
 
   return (
     <div className={`result result-${d.score === 1 ? 'win' : d.score === 0 ? 'loss' : 'draw'}`}>
+      {effect && <canvas ref={fx} className="victory-fx" aria-hidden="true" />}
       <h1 className="result-title">{rec.practice ? `Practice: ${d.title}` : d.title}</h1>
       <p className="muted">{d.detail}</p>
       <div className="panel result-card">
@@ -170,11 +181,16 @@ export function ResultScreen() {
         <button className="btn" onClick={rematch}>
           {rec.practice ? 'Try again' : 'Rematch'}
         </button>
-        {!rec.practice && (
-          <button className="btn primary big" onClick={() => review(rec.id)}>
-            Review
-          </button>
-        )}
+        {!rec.practice &&
+          (history.find((g) => g.id === rec.id)?.review ? (
+            <button className="btn big reviewed" onClick={() => review(rec.id)}>
+              ✓ See review
+            </button>
+          ) : (
+            <button className="btn primary big" onClick={() => review(rec.id)}>
+              Review
+            </button>
+          ))}
       </div>
     </div>
   );

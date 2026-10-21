@@ -3,7 +3,7 @@
 // the player can pick another in Profile → Settings.
 import type { WorldId } from '../data/characters';
 
-export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library';
+export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library' | 'maptable' | 'chequered';
 
 export interface BoardTheme {
   id: BoardThemeId;
@@ -26,6 +26,8 @@ export const BOARD_THEMES: BoardTheme[] = [
   { id: 'campfire', name: 'Campfire', light: '#f6d9a8', dark: '#c46a3a', frame: '#5a3020', texture: 'grain' },
   { id: 'starfall', name: 'Starfall', light: '#c9d4f0', dark: '#4a5a9a', frame: '#1e2448', texture: 'marble' },
   { id: 'library', name: 'Library', light: '#ead9b8', dark: '#7a5a42', frame: '#3b2617', texture: 'grain' },
+  { id: 'maptable', name: 'Map Table', light: '#efdcae', dark: '#a98a5a', frame: '#5a3a22', texture: 'straw' },
+  { id: 'chequered', name: 'Chequered Study', light: '#f4f0e6', dark: '#3f5a7a', frame: '#2b2238', texture: 'flag' },
 ];
 
 export const REGION_BOARD: Record<WorldId, BoardThemeId> = {

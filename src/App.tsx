@@ -11,6 +11,7 @@ import { PreMatch } from './ui/screens/PreMatch';
 import { ProfileScreen } from './ui/screens/ProfileScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { ReviewScreen } from './ui/screens/ReviewScreen';
+import { PuzzleScreen } from './ui/screens/PuzzleScreen';
 import { CreateHero } from './ui/screens/CreateHero';
 import { HeroScreen } from './ui/screens/HeroScreen';
 import { applyPieceSet } from './ui/pieces';
@@ -92,6 +93,7 @@ export function App() {
         {screen === 'hero' && <HeroScreen />}
         {screen === 'create' && <CreateHero />}
         {screen === 'review' && <ReviewScreen />}
+        {screen === 'puzzle' && <PuzzleScreen />}
       </main>
       {['map', 'heroes', 'hero', 'profile'].includes(screen) && <PlayDock />}
       {!inFight && screen !== 'prematch' && screen !== 'create' && (

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Side } from '../game/chess';
 
-export type Screen = 'map' | 'prematch' | 'battle' | 'result' | 'heroes' | 'hero' | 'create' | 'profile' | 'review';
+export type Screen = 'map' | 'prematch' | 'battle' | 'result' | 'heroes' | 'hero' | 'create' | 'profile' | 'review' | 'puzzle';
 
 export interface Matchup {
   characterId: string;
@@ -15,13 +15,21 @@ export const useNav = create<{
   matchup: Matchup | null;
   /** The game the review screen shows. */
   reviewId: string | null;
+  /** The puzzles the puzzle screen goes through, in order. */
+  puzzleIds: string[];
   go: (s: Screen) => void;
   challenge: (m: Matchup) => void;
   review: (gameId: string) => void;
+  solve: (ids: string[]) => void;
 }>()((set) => ({
   screen: 'map',
   matchup: null,
   reviewId: null,
+  puzzleIds: [],
+  solve: (puzzleIds) => {
+    set({ puzzleIds, screen: 'puzzle' });
+    window.scrollTo?.(0, 0);
+  },
   review: (reviewId) => {
     set({ reviewId, screen: 'review' });
     window.scrollTo?.(0, 0);

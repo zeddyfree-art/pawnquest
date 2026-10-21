@@ -19,7 +19,8 @@ import { useNav } from '../nav';
 export function ReviewScreen() {
   const gameId = useNav((s) => s.reviewId);
   const go = useNav((s) => s.go);
-  const { history, reviews, setReview, startGame, lastResult, reviewUnlocks } = useSave();
+  const { history, reviews, setReview, startGame, lastResult, reviewUnlocks, puzzles } = useSave();
+  const solve = useNav((s) => s.solve);
   const record = history.find((g) => g.id === gameId) ?? (lastResult?.record.id === gameId ? lastResult.record : undefined);
   const c = record && characterById(record.characterId);
   const review = gameId ? reviews[gameId] : undefined;
@@ -156,8 +157,13 @@ export function ReviewScreen() {
                 <button className="btn" onClick={() => setPly(m.ply)}>
                   Show on board
                 </button>
+                {puzzles.some((p) => p.id === `${record.id}:${m.ply}`) && (
+                  <button className="btn primary" onClick={() => solve([`${record.id}:${m.ply}`])}>
+                    Find it yourself
+                  </button>
+                )}
                 <button
-                  className="btn primary"
+                  className="btn"
                   onClick={() => {
                     startGame(c.id, m.side, false, { startFen: m.fen, practice: true });
                     go('battle');

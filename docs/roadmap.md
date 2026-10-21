@@ -68,5 +68,10 @@ give up, finish the job, mate maker, bold challenger, take a breather, explorer)
 or lose), study (1 to 100 reviews, reviewed wins, ten habit breakers) and conquest (the old quests); titles with a
 picker; 11 new gear items, 3 boards and 3 piece sets; good-habit chips (+10 XP) and a kind line after three
 losses on the result screen. Reviews are summarised on the game record, so they keep counting past 50.
-Next: pets that grow, the passport, a practice log (Second chance, puzzle book), victory effects, and the
-Library (opening scrolls, chess codex, bestiary lore).
+Pets that grow (v0.7): a little gift at 25 games together, grown up at 100.
+
+Batch 2 (v0.8, chosen in the wishlist): the puzzle book (the better moves from your reviews, found yourself
+with hints in steps, as in the Repertoire app; Second chance at 5 first tries, milestones at 10, 25 and 50), the
+passport (a stamp per region, Map Table board), Friend of the Realm, victory effects by level, Professor Hoot's
+glasses and cap, and "✓ Reviewed" on reviewed games.
+Not now (maybe much later): map banners and the Library (opening scrolls, chess codex, bestiary lore).

@@ -4,7 +4,10 @@ import { CLASSES, ITEMS, PETS, itemFrom } from '../data/gear';
 import { BOARD_THEMES } from '../ui/boards';
 import { PIECE_SETS } from '../ui/pieces';
 import type { GameRecord } from './progress';
-import { QUESTS, newUnlocks, unlocks, type Progress } from './unlocks';
+import { QUESTS, newUnlocks, regionsVisited, unlocks, type Progress } from './unlocks';
+import { WORLDS } from '../data/characters';
+import { owlScholar } from './pets';
+import { effectFor } from '../ui/victory';
 import { TITLES } from '../data/titles';
 
 const game = (o: Partial<GameRecord>): GameRecord => ({
@@ -23,7 +26,7 @@ const game = (o: Partial<GameRecord>): GameRecord => ({
   auto: false,
   ...o,
 });
-const progress = (history: GameRecord[], extra: Partial<Progress> = {}): Progress => ({ history, reviews: 0, peak: 600, ...extra });
+const progress = (history: GameRecord[], extra: Partial<Progress> = {}): Progress => ({ history, reviews: 0, peak: 600, puzzles: { solved: 0, firstTry: 0 }, ...extra });
 
 describe('unlocks', () => {
   it('every opponent drops exactly one item, and ids are unique', () => {
@@ -113,5 +116,46 @@ describe('pets grow', () => {
     expect(nextGrowth(Array.from({ length: 30 }, () => g('dog')), 'dog')).toEqual({ games: 30, of: 100 });
     expect(petStage(Array.from({ length: 100 }, () => g('dog')), 'dog')).toBe(2);
     expect(nextGrowth(Array.from({ length: 100 }, () => g('dog')), 'dog')).toBeNull();
+  });
+
+  it('the passport stamps every region played in, win or lose; a full one gives the Map Table', () => {
+    const lost = (characterId: string) => game({ characterId, score: 0, winner: 'black', termination: 'resign', moves: Array(24).fill('e2e4') });
+    const one = (w: string) => CHARACTERS.find((c) => c.world === w)!.id;
+    expect(regionsVisited([lost(one('training')), lost(one('castle'))])).toEqual(new Set(['training', 'castle']));
+    const all = WORLDS.map((w) => lost(one(w.id)));
+    expect(unlocks(progress(all.slice(1))).boards.has('maptable')).toBe(false);
+    expect(unlocks(progress(all)).boards.has('maptable')).toBe(true);
+  });
+
+  it('Friend of the Realm: a game against every character, win or lose', () => {
+    const met = CHARACTERS.map((c) => game({ characterId: c.id, score: 0.5, winner: null, termination: 'agreement', moves: Array(24).fill('e2e4') }));
+    expect(unlocks(progress(met.slice(1))).titles.has('friend-realm')).toBe(false);
+    expect(unlocks(progress(met)).titles.has('friend-realm')).toBe(true);
+  });
+
+  it('puzzle book quests: Second chance at 5 first tries, milestones at 10, 25 and 50 solved', () => {
+    const u = (solved: number, firstTry: number) => unlocks(progress([], { puzzles: { solved, firstTry } }));
+    expect(u(5, 4).items.has('training-sword')).toBe(false);
+    expect(u(5, 5).items.has('training-sword')).toBe(true);
+    expect(u(10, 0).titles.has('puzzle-solver')).toBe(true);
+    expect(u(25, 0).boards.has('chequered')).toBe(true);
+    expect(u(49, 0).items.has('puzzle-box')).toBe(false);
+    expect(u(50, 0).items.has('puzzle-box')).toBe(true);
+  });
+
+  it('Professor Hoot gets glasses at 10 reviews and a cap at 50', () => {
+    const reviewed = (n: number) => Array.from({ length: n }, () => game({ review: { accuracy: 80, blunders: 0, mistakes: 0, inaccuracies: 0, kinds: [], minWinPct: 50 } }));
+    expect(owlScholar(reviewed(9))).toBe(0);
+    expect(owlScholar(reviewed(10))).toBe(1);
+    expect(owlScholar(reviewed(50))).toBe(2);
+  });
+
+  it('victory effects unlock with levels; auto picks the newest', () => {
+    expect(effectFor('auto', 2)).toBeNull();
+    expect(effectFor('auto', 3)).toBe('confetti');
+    expect(effectFor('auto', 12)).toBe('fireworks');
+    expect(effectFor('confetti', 12)).toBe('confetti');
+    expect(effectFor('snow', 12)).toBe('fireworks'); // not unlocked yet: the newest instead
+    expect(effectFor('none', 20)).toBeNull();
   });
 });

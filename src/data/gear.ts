@@ -78,6 +78,8 @@ export const ITEMS: Item[] = [
   { id: 'heros-mantle', name: 'Hero’s Mantle', quest: true, art: { slot: 'body', kind: 'cloak', color: '#b03040', color2: '#f2b33d' } },
   { id: 'candle', name: 'Candle', quest: true, art: { slot: 'off', kind: 'candle', color: '#f4ead6' } },
   { id: 'scholars-hood', name: 'Scholar’s Hood', quest: true, art: { slot: 'head', kind: 'hood', color: '#2f4a7a' } },
+  { id: 'training-sword', name: 'Training Sword', quest: true, art: { slot: 'main', kind: 'sword', color: '#d8dde6', color2: '#7a4f2c' } },
+  { id: 'puzzle-box', name: 'Puzzle Box', quest: true, art: { slot: 'off', kind: 'puzzlebox', color: '#f4ead6' } },
   { id: 'grandmasters-tome', name: 'Grandmaster’s Tome', quest: true, art: { slot: 'off', kind: 'book', color: '#5b3a6e', color2: '#f2b33d' } },
 
   { id: 'bone-crown', name: 'The Necromancer’s Crown', from: 'necromancer-king', art: { slot: 'head', kind: 'crown', color: '#ece4cf', color2: '#7df0c8' } },
