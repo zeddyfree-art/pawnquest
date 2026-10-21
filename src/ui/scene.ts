@@ -57,18 +57,68 @@ const DRAW: Record<WorldId, (px: Px, r: () => number) => void> = {
     for (let k = 0; k < 40; k++) px(Math.floor(r() * BACKDROP_W), 124 + Math.floor(r() * 36), '#6aa24c');
   },
   gutter: (px, r) => {
+    // Dusk and rain over a medieval slum: crooked timber-framed houses with jettied upper floors, steep slate
+    // roofs and leaning chimneys, washing lines, a lantern post; the castle far off on its hill.
     sky(px, ['#5b5778', '#6e6587', '#86729a', '#a07f9e', '#c08f8f']);
-    let x = 0;
-    while (x < BACKDROP_W) {
-      const w = 14 + Math.floor(r() * 12);
-      const h = 50 + Math.floor(r() * 40);
-      box(px, x, BACKDROP_H - h, w, h, '#3f3a52');
-      tri(px, x + Math.floor(w / 2), BACKDROP_H - h - 8, Math.floor(w / 2), 8, '#353046');
-      if (r() < 0.6) box(px, x + 2, BACKDROP_H - h - 14, 3, 8, '#353046'); // chimney
-      for (let wy = BACKDROP_H - h + 6; wy < BACKDROP_H - 14; wy += 10) for (let wx = x + 3; wx < x + w - 3; wx += 6) if (r() < 0.35) box(px, wx, wy, 2, 3, '#f2c45a');
-      x += w + 1;
+    ridge(px, (x) => 92 + Math.sin(x / 16) * 4, '#5a5470'); // the hill
+    box(px, 84, 70, 26, 22, '#4f4a64'); // castle walls
+    for (const tx of [82, 106]) {
+      box(px, tx, 60, 8, 32, '#4f4a64');
+      tri(px, tx + 4, 52, 5, 8, '#454059');
     }
-    ridge(px, () => 148, '#2c2838');
+    for (let x = 86; x < 110; x += 4) box(px, x, 67, 2, 3, '#4f4a64');
+    let x = -4;
+    const roofs: [number, number][] = [];
+    while (x < BACKDROP_W) {
+      const w = 18 + Math.floor(r() * 9);
+      const ground = 120 + Math.floor(r() * 8); // top of the ground floor
+      const upper = ground - 18 - Math.floor(r() * 8); // top of the jettied upper floor
+      const lean = Math.floor(r() * 3) - 1;
+      // Ground floor in rough stone, upper floor in plaster with dark timbers, one pixel wider each side.
+      box(px, x, ground, w, BACKDROP_H - ground, '#4b4456');
+      for (let k = 0; k < 5; k++) box(px, x + Math.floor(r() * (w - 3)), ground + 3 + Math.floor(r() * 22), 3, 1, '#433c4d');
+      box(px, x - 1, upper, w + 2, ground - upper, '#8a7a86');
+      for (let bx = x - 1; bx < x + w + 1; bx += 6) box(px, bx, upper, 1, ground - upper, '#3a2a2e'); // studs
+      box(px, x - 1, upper, w + 2, 1, '#3a2a2e');
+      box(px, x - 1, ground - 1, w + 2, 2, '#3a2a2e'); // the jetty beam
+      for (let bx = x + 2; bx + 5 < x + w; bx += 12) for (let i = 0; i < 5; i++) px(bx + i, upper + 2 + i * 2, '#3a2a2e'); // braces
+      // Small leaded windows, a few of them lit.
+      for (let wx = x + 3; wx + 3 < x + w; wx += 7) {
+        if (r() < 0.45) continue;
+        const lit = r() < 0.35;
+        box(px, wx, upper + 5, 3, 4, lit ? '#f2c45a' : '#2a2434');
+        if (lit) px(wx + 1, upper + 6, '#c99a3a');
+      }
+      // A steep slate roof, leaning a little, with a crooked chimney.
+      const peak = upper - 12 - Math.floor(r() * 6);
+      tri(px, x + Math.floor(w / 2) + lean, peak, Math.floor(w / 2) + 3, upper - peak, '#3b364c');
+      const mid = x + Math.floor(w / 2) + lean;
+      for (let ry = peak + 3; ry < upper; ry += 3) {
+        const half = Math.round(((Math.floor(w / 2) + 3) * (ry - peak)) / (upper - peak)) - 1;
+        for (let rx = mid - half; rx <= mid + half; rx += 2) if (r() < 0.3) px(rx, ry, '#454059'); // slates
+      }
+      if (r() < 0.7) {
+        const cx = x + 3 + Math.floor(r() * (w - 8));
+        box(px, cx, peak + 2, 3, 8, '#4b4456');
+        box(px, cx - 1 + lean, peak, 4, 2, '#433c4d');
+      }
+      box(px, x + Math.floor(w / 2) - 2, BACKDROP_H - 18, 5, 8, '#2a2030'); // door
+      box(px, x + w, ground, 2, BACKDROP_H - ground, '#2a2434'); // a dark alley to the next house
+      roofs.push([x + w, upper + 4]);
+      x += w + 2;
+    }
+    // Washing lines between the houses.
+    for (let i = 0; i < roofs.length - 1; i += 2) {
+      const [x0, y0] = roofs[i];
+      for (let k = -4; k <= 4; k++) px(x0 + k, y0 + 2 + Math.round((k * k) / 12), '#2a2434');
+      for (const k of [-3, 0, 3]) box(px, x0 + k, y0 + 3 + Math.round((k * k) / 12), 2, 3, ['#c4553f', '#e9dcc4', '#6b8f4e'][Math.abs(k) % 3]);
+    }
+    // The street: wet cobbles and a lantern post.
+    ridge(px, () => 150, '#2c2838');
+    for (let k = 0; k < 50; k++) px(Math.floor(r() * BACKDROP_W), 151 + Math.floor(r() * 9), '#3b3548');
+    box(px, 18, 126, 2, 24, '#2a2030');
+    box(px, 15, 122, 8, 5, '#2a2030');
+    box(px, 16, 123, 6, 3, '#f2c45a');
   },
   village: (px, r) => {
     sky(px, ['#8fd0f0', '#a6dbf3', '#bfe6f5', '#d6f0f4']);
