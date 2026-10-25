@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { posFromFen, replay, sanToUci, START_FEN, uciFromBoard, legalUcis } from './chess';
+import { posFromFen, replay, sanToUci, START_FEN, uciFromBoard, legalUcis, materialDiff } from './chess';
 import { boardResult, timeoutResult } from './rules';
 
 function line(sans: string): string[] {
@@ -40,5 +40,15 @@ describe('moves', () => {
     const pos = posFromFen('8/P7/8/8/8/8/8/k6K w - - 0 1');
     expect(uciFromBoard(pos, 'a7', 'a8', 'knight')).toBe('a7a8n');
     expect(legalUcis(pos)).toEqual(expect.arrayContaining(['a7a8q', 'a7a8r', 'a7a8b', 'a7a8n']));
+  });
+});
+
+describe('material difference', () => {
+  it('shows only what a side is up: trades cancel out, a promoted queen counts as a queen', () => {
+    expect(materialDiff(posFromFen(START_FEN))).toEqual({ white: [], black: [] });
+    // White: rook, bishop, 7 pawns. Black: two rooks, 6 pawns.
+    expect(materialDiff(posFromFen('r3k2r/ppp2ppp/8/8/8/8/PPPP1PPP/R1B1K3 w - - 0 1'))).toEqual({ white: ['bishop', 'pawn'], black: ['rook'] });
+    // Two queens against one: one queen up.
+    expect(materialDiff(posFromFen('4k3/8/8/8/8/8/8/QQ2K2q w - - 0 1'))).toEqual({ white: ['queen'], black: [] });
   });
 });

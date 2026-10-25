@@ -7,40 +7,9 @@ import type { Role } from 'chessops/types';
 export const PIECE_SIZE = 64;
 const S = PIECE_SIZE / 32;
 
-type Shape = (x: number, y: number) => boolean;
-const rect = (x0: number, y0: number, x1: number, y1: number): Shape => (x, y) => x >= x0 && x < x1 && y >= y0 && y < y1;
-const half = (y0: number, y1: number, w0: number, w1: number): Shape => (x, y) => y >= y0 && y < y1 && Math.abs(x - 16) < w0 + ((w1 - w0) * (y - y0)) / (y1 - y0);
-const ellipse = (cx: number, cy: number, rx: number, ry: number): Shape => (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
-const polygon = (pts: [number, number][]): Shape => (x, y) => {
-  let inside = false;
-  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-    const [xi, yi] = pts[i];
-    const [xj, yj] = pts[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-};
-/** A thick line segment (for slits and notches). */
-const segment = (x0: number, y0: number, x1: number, y1: number, w: number): Shape => (x, y) => {
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  const t = Math.max(0, Math.min(1, ((x - x0) * dx + (y - y0) * dy) / (dx * dx + dy * dy)));
-  return Math.hypot(x - (x0 + t * dx), y - (y0 + t * dy)) <= w / 2;
-};
-const any = (...s: Shape[]): Shape => (x, y) => s.some((f) => f(x, y));
-const minus = (a: Shape, ...b: Shape[]): Shape => (x, y) => a(x, y) && !b.some((f) => f(x, y));
+import { any, base, ellipse, half, minus, polygon, rect, segment, type Design, type Shape } from './pieceShapes';
 
-const base = any(half(23.5, 25.5, 7.5, 8.5), rect(5.5, 25.5, 26.5, 29));
-
-interface Design {
-  body: Shape;
-  /** Parts drawn in gold. */
-  gold?: Shape;
-  /** Dark carved lines inside the body (eyes, slits). */
-  carve?: Shape;
-}
-
-const DESIGNS: Record<Role, Design> = {
+export const DESIGNS: Record<Role, Design> = {
   pawn: { body: any(ellipse(16, 9, 5.3, 5.3), rect(13.2, 13, 18.8, 15.5), ellipse(16, 15.8, 6.6, 1.7), half(16.5, 23.5, 3.6, 7), base) },
   rook: {
     body: minus(any(rect(7, 3.5, 25, 9.5), rect(8.5, 9.5, 23.5, 11), rect(10.2, 11, 21.8, 21.5), half(21.5, 23.5, 6.3, 7.5), base), rect(11, 3, 13.4, 6.5), rect(18.6, 3, 21, 6.5)),
@@ -74,7 +43,7 @@ const DESIGNS: Record<Role, Design> = {
   },
 };
 
-interface Palette {
+export interface Palette {
   line: string;
   deep: string;
   shade: string;
@@ -112,12 +81,20 @@ function tone(hex: string, f: number): string {
   return `#${[n >> 16, (n >> 8) & 255, n & 255].map((v) => ch(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
-const GOLD = { deep: '#9c6a1c', shade: '#cf8f2a', base: '#f2b33d', light: '#f8cf6a', high: '#fff2b8' };
+export type Trim = { deep: string; shade: string; base: string; light: string; high: string };
+const GOLD: Trim = { deep: '#9c6a1c', shade: '#cf8f2a', base: '#f2b33d', light: '#f8cf6a', high: '#fff2b8' };
+/** A trim ramp (for the "gold" parts) from one colour. */
+export const trimRamp = (b: string): Trim => ({ deep: tone(b, -0.36), shade: tone(b, -0.18), base: b, light: tone(b, 0.3), high: tone(b, 0.62) });
+export { ramp };
 
 /** RGBA pixels of one piece. */
 export function renderPiece(role: Role, color: 'white' | 'black', set: PieceSetId = 'classic'): Uint8ClampedArray {
+  return renderDesign(DESIGNS[role], (PIECE_SETS.find((p) => p.id === set) ?? PIECE_SETS[0])[color]);
+}
+
+/** RGBA pixels of one design in a palette, with a trim colour for its gold parts. */
+export function renderDesign(d: Design, c: Palette, gold: Trim = GOLD): Uint8ClampedArray {
   const N = PIECE_SIZE;
-  const d = DESIGNS[role];
   const at = (f: Shape | undefined, x: number, y: number) => !!f && f((x + 0.5) / S, (y + 0.5) / S);
   const inside: boolean[] = [];
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) inside.push(at(d.body, x, y));
@@ -130,7 +107,6 @@ export function renderPiece(role: Role, color: 'white' | 'black', set: PieceSetI
     out[i + 2] = parseInt(hex.slice(5, 7), 16);
     out[i + 3] = 255;
   };
-  const c = (PIECE_SETS.find((p) => p.id === set) ?? PIECE_SETS[0])[color];
   const R = 4;
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++) {
@@ -157,7 +133,7 @@ export function renderPiece(role: Role, color: 'white' | 'black', set: PieceSetI
         }
       const len = Math.hypot(ox, oy) || 1;
       const lit = edge > R ? 0.05 : (-(ox / len) * 0.7 - (oy / len) * 0.7) * (1.15 - edge / (R + 1));
-      const tone = at(d.gold, x, y) ? GOLD : c;
+      const tone = at(d.gold, x, y) ? gold : c;
       let col = lit > 0.55 ? tone.high : lit > 0.18 ? tone.light : lit < -0.45 ? tone.deep : lit < -0.12 ? tone.shade : tone.base;
       // The plinth sits in a little shadow.
       if (y >= 25.5 * S && col === tone.base) col = tone.shade;

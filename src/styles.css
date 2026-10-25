@@ -190,11 +190,13 @@ button { font: inherit; color: inherit; }
 .clock.low.running { color: #ffb3a8; }
 .speech { flex: 1; min-width: 0; margin: 0 0 0 4px; font-size: 13px; line-height: 1.25; padding: 4px 9px; cursor: pointer; max-height: 52px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .speech::before { content: ''; position: absolute; left: -12px; top: 50%; margin-top: -6px; border: 6px solid transparent; border-right-color: var(--outline); }
-.captured { display: flex; align-items: center; height: 18px; overflow: hidden; }
+.captured { display: flex; align-items: center; height: 18px; min-width: 0; }
+.captured-pieces { display: flex; align-items: center; min-width: 0; overflow: hidden; }
+.captured-pieces img { flex: 0 0 auto; }
 .captured img { image-rendering: pixelated; }
 .captured img.stack { margin-left: -9px; }
-.captured .material { margin-left: 4px; font-size: 13px; }
-.turn-hint { font-size: 13px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+.captured .material { margin-left: 4px; font-size: 13px; flex: 0 0 auto; }
+.turn-hint { font-size: 13px; color: var(--dim); white-space: nowrap; flex: 0 0 auto; }
 .scene {
   position: relative; min-height: 100vh; min-height: 100dvh; overflow: hidden;
   background-size: 100% auto; background-repeat: no-repeat; background-position: center bottom; image-rendering: pixelated;
@@ -466,9 +468,11 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 .worldmap .figure:hover img, .worldmap .figure:focus-visible img { filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff); }
 .figure-label {
   display: grid; justify-items: center; margin-top: -2px; padding: 1px 7px 2px; border-radius: 4px; line-height: 1.15; white-space: nowrap;
+  max-width: 116px; text-align: center;
   background: rgba(255, 248, 236, 0.92); box-shadow: 0 0 0 1.5px var(--outline), inset 0 -3px 0 var(--fc, var(--accent));
 }
-.figure-label b { font-size: 11px; display: inline-flex; align-items: center; gap: 2px; }
+.figure-label b { font-size: 11px; display: block; white-space: normal; text-wrap: balance; }
+.figure-label b .crown-icon, .figure-label b svg, .figure-label b img { vertical-align: -1px; margin-right: 2px; }
 .figure-label small { font-family: var(--pixel); font-weight: 700; font-size: 12px; color: var(--accent-dark); }
 .figure.beaten .figure-label { background: rgba(232, 246, 214, 0.95); }
 .worldmap .map-hero { z-index: 3; pointer-events: none; margin: 0; }
