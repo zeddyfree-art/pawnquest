@@ -83,13 +83,16 @@ export function PawnIcon({ size = 12 }: { size?: number }) {
   );
 }
 
-/** The pieces a side has taken, and how far ahead it is in material (+3), as on Lichess. */
+/** As on Lichess: the pieces a side is up (trades cancel out) and how far ahead it is in material (+3). The
+ * points always stay in view; the pieces give way when there is no room. */
 export function Material({ roles, color, plus }: { roles: Role[]; color: 'white' | 'black'; plus: number }) {
   return (
-    <span className="captured" aria-label={roles.length ? `Captured: ${roles.join(', ')}${plus > 0 ? `, ahead by ${plus}` : ''}` : undefined}>
-      {roles.map((r, i) => (
-        <img key={i} src={pieceDataUrl(r, color)} alt="" width={18} height={18} className={i > 0 && roles[i - 1] === r ? 'stack' : ''} />
-      ))}
+    <span className="captured" aria-label={roles.length || plus > 0 ? `Up: ${roles.join(', ') || 'nothing'}${plus > 0 ? `, ahead by ${plus}` : ''}` : undefined}>
+      <span className="captured-pieces">
+        {roles.map((r, i) => (
+          <img key={i} src={pieceDataUrl(r, color)} alt="" width={18} height={18} className={i > 0 && roles[i - 1] === r ? 'stack' : ''} />
+        ))}
+      </span>
       {plus > 0 && <b className="material">+{plus}</b>}
     </span>
   );

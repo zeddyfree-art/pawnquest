@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TITLES } from '../../data/titles';
 import { CLOCK } from '../../config';
-import { characterById, REACTIONS, shortName, type Character } from '../../data/characters';
+import { characterById, REACTIONS, type Character } from '../../data/characters';
 import { acceptsDraw, chooseBotMove, shouldResign, thinkTimeMs } from '../../engine/botPlayer';
 import { loadModel, maiaPredict, MODELS, useMaia } from '../../engine/maia';
-import { captured, materialBalance, needsPromotion, other, replay, uciFromBoard, type Side } from '../../game/chess';
+import { materialDiff, materialBalance, needsPromotion, other, replay, uciFromBoard, type Side } from '../../game/chess';
 import { flagged, press, runFor, showTime, stop, timeLeft } from '../../game/clock';
 import { boardResult, timeoutResult, type Result } from '../../game/rules';
 import { useSave } from '../../store/save';
@@ -228,7 +228,7 @@ export function Battle() {
   };
 
   const balance = materialBalance(r.pos) * (playerSide === 'white' ? 1 : -1);
-  const taken = captured(r.pos);
+  const ahead = materialDiff(r.pos);
   const clockOf = (side: Side) => timeLeft(active.clock, side, now);
   const loadingText =
     modelStatus === 'downloading' ? `Summoning your opponent… ${progress}%` : 'Summoning your opponent…';
@@ -246,7 +246,7 @@ export function Battle() {
           <div className="fighter-info">
             <b>{c.name}</b>
             <small>{c.rating}</small>
-            <Material roles={taken[botSide]} color={playerSide} plus={-balance} />
+            <Material roles={ahead[botSide]} color={playerSide} plus={-balance} />
           </div>
         )}
         <span className={`clock${active.clock.running === botSide ? ' running' : ''}${clockOf(botSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(botSide))}</span>
@@ -302,9 +302,9 @@ export function Battle() {
             {rating}
             {hero?.title && TITLES[hero.title] ? ` · ${TITLES[hero.title]}` : ''}
           </small>
-          <Material roles={taken[playerSide]} color={botSide} plus={balance} />
+          <Material roles={ahead[playerSide]} color={botSide} plus={balance} />
         </div>
-        <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : `${shortName(c.name)} is thinking…`) : ''}</span>
+        <span className="turn-hint">{ready ? (playerTurn ? 'Your move' : 'Thinking…') : ''}</span>
         <span className={`clock${active.clock.running === playerSide ? ' running' : ''}${clockOf(playerSide) < 30_000 ? ' low' : ''}`}>{showTime(clockOf(playerSide))}</span>
       </div>
 

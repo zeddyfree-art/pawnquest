@@ -2,7 +2,7 @@
 // name and rating; tap one to challenge them. Your hero stands where your rating puts you. The Play button
 // (below) picks an opponent.
 import { useEffect, useMemo, useRef } from 'react';
-import { CHARACTERS, FACTIONS, WORLDS, characterById, shortName } from '../../data/characters';
+import { CHARACTERS, FACTIONS, WORLDS, characterById } from '../../data/characters';
 import { characterRecord } from '../../game/progress';
 import { useSave } from '../../store/save';
 import { CrownIcon, HeroSprite } from '../components';
@@ -12,12 +12,6 @@ import { useNav } from '../nav';
 import { heroSpot, mapLayout, mapUrl } from '../worldMap';
 
 const FIGURE = 64;
-/** Short names for the map tags, so they read alike. */
-const MAP_NAME: Record<string, string> = {
-  'straw-sam': 'Straw Sam', 'old-tom': 'Old Tom', 'brawling-bess': 'Bess', 'squire-aldric': 'Aldric', 'captain-holt': 'Holt',
-  'sir-cedric': 'Cedric', 'bishop-anselm': 'Anselm', 'royal-champion': 'Champion', oakhart: 'Oakhart', 'frost-giant': 'Frost Giant',
-  'count-draven': 'Draven', 'bone-oracle': 'Oracle', 'witch-queen': 'Witch-Queen', 'death-knight': 'Death Knight', 'necromancer-king': 'Necromancer',
-};
 
 export function MapScreen() {
   const { rating, history, hero } = useSave();
@@ -60,7 +54,7 @@ export function MapScreen() {
               <span className="figure-label">
                 <b>
                   {rec.crown !== 'none' && <CrownIcon crown={rec.crown} size={12} />}
-                  {MAP_NAME[c.id] ?? shortName(c.name)}
+                  {c.name}
                 </b>
                 <small>{c.rating}</small>
               </span>

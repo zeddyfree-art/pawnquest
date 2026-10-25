@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { characterById, REACTIONS, shortName } from '../../data/characters';
+import { characterById, REACTIONS } from '../../data/characters';
 import { levelFor } from '../../game/progress';
 import { describeResult } from '../../game/rules';
 import { useSave } from '../../store/save';
@@ -134,7 +134,7 @@ export function ResultScreen() {
             <div key={id} className="reward">
               <GearIcon art={it.art} size={48} />
               <span>
-                <small>{shortName(c.name)} dropped</small>
+                <small>{c.name} dropped</small>
                 <b>{it.name}</b>
               </span>
               <button
