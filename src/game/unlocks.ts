@@ -118,6 +118,13 @@ export function regionsVisited(h: readonly GameRecord[]): Set<WorldId> {
   return out;
 }
 const metEveryone = (h: readonly GameRecord[]) => new Set(h.filter(countsAsGame).map((g) => g.characterId)).size;
+/** Fire and ice: both beaten (2 of 2), or 25 losses to the two of them; whichever is further along. */
+function fireAndIce(h: readonly GameRecord[]): [number, number] {
+  const foes = ['ignis', 'frost-giant'];
+  const beaten = new Set(wins(h).filter((g) => foes.includes(g.characterId)).map((g) => g.characterId)).size;
+  const losses = h.filter((g) => g.score === 0 && foes.includes(g.characterId) && countsAsGame(g)).length;
+  return losses >= 25 ? [2, 2] : [beaten, 2];
+}
 const distinctWinsOf = (h: readonly GameRecord[], faction: string) => new Set(wins(h).filter((g) => g.faction === faction).map((g) => g.characterId)).size;
 const count = (n: number, of: number): [number, number] => [Math.min(n, of), of];
 
@@ -143,6 +150,7 @@ export const QUESTS: Quest[] = [
   { group: 'conquest', id: 'rating-2000', title: 'Dragon friend', text: 'Reach a rating of 2000.', rewards: [{ kind: 'pet', id: 'dragon' }], progress: (p) => count(p.peak >= 2000 ? 1 : 0, 1) },
   { group: 'conquest', id: 'underworld', title: 'Into the dark', text: 'Beat anyone in the Underworld.', rewards: [{ kind: 'board', id: 'obsidian' }], progress: (p) => count(wins(p.history).filter((g) => characterById(g.characterId)?.world === 'underworld').length, 1) },
   { group: 'conquest', id: 'boss', title: 'The crown falls', text: 'Beat the Necromancer King.', rewards: [{ kind: 'pet', id: 'ghost' }], progress: (p) => count(wins(p.history).filter((g) => g.characterId === 'necromancer-king').length, 1) },
+  { group: 'conquest', id: 'fire-and-ice', title: 'Fire and ice', text: 'Beat both Ignis the Dragon Tamer and the Frost Giant once, or lose to them 25 times in all.', rewards: [{ kind: 'pieces', id: 'fireice' }], progress: (p) => fireAndIce(p.history) },
   { group: 'conquest', id: 'all-rivals', title: 'Legend', text: 'Beat every opponent at least once.', rewards: [{ kind: 'pet', id: 'bat' }], progress: (p) => count(new Set(wins(p.history).map((g) => g.characterId)).size, 32) },
 
   // Good habits.

@@ -8,6 +8,7 @@ export const PIECE_SIZE = 64;
 const S = PIECE_SIZE / 32;
 
 import { any, base, ellipse, half, minus, polygon, rect, segment, type Design, type Shape } from './pieceShapes';
+import { ELEMENTS } from './pieceThemes';
 
 export const DESIGNS: Record<Role, Design> = {
   pawn: { body: any(ellipse(16, 9, 5.3, 5.3), rect(13.2, 13, 18.8, 15.5), ellipse(16, 15.8, 6.6, 1.7), half(16.5, 23.5, 3.6, 7), base) },
@@ -61,18 +62,30 @@ const CLASSIC = {
 /** A palette from one base colour and an outline colour. */
 const ramp = (base: string, line: string): Palette => ({ line, deep: tone(base, -0.32), shade: tone(base, -0.16), base, light: tone(base, 0.28), high: tone(base, 0.6), carve: tone(base, -0.5) });
 
-export type PieceSetId = 'classic' | 'woodland' | 'ivory' | 'frost' | 'ember' | 'royal' | 'jade' | 'parchment' | 'moonlight' | 'ink';
-export const PIECE_SETS: { id: PieceSetId; name: string; white: Palette; black: Palette }[] = [
+export type PieceSetId = 'classic' | 'woodland' | 'ivory' | 'frost' | 'ember' | 'royal' | 'jade' | 'parchment' | 'moonlight' | 'ink' | 'fireice';
+export interface PieceSet {
+  id: PieceSetId;
+  name: string;
+  white: Palette;
+  black: Palette;
+  /** Own shapes (the classic ones otherwise). */
+  designs?: Record<Role, Design>;
+  /** Trim colour per side for the "gold" parts (gold otherwise). */
+  trim?: { white: string; black: string };
+}
+// White and black get clearly different hues in every set, not only light and dark.
+export const PIECE_SETS: PieceSet[] = [
   { id: 'classic', name: 'Classic', ...CLASSIC },
-  { id: 'woodland', name: 'Birch & Walnut', white: ramp('#e8cf9c', '#4a2a17'), black: ramp('#7a4a2a', '#24130a') },
-  { id: 'ivory', name: 'Ivory & Onyx', white: ramp('#fbf6ea', '#3b3440'), black: ramp('#3a3a48', '#121218') },
-  { id: 'frost', name: 'Frost', white: ramp('#e4f2ff', '#2a3a5a'), black: ramp('#33558f', '#101a33') },
-  { id: 'ember', name: 'Ember', white: ramp('#ffe2a0', '#5a2a10'), black: ramp('#9a2c2c', '#2a0c0c') },
-  { id: 'royal', name: 'Royal', white: ramp('#f2eefc', '#3a2a5a'), black: ramp('#563596', '#180c33') },
-  { id: 'jade', name: 'Jade', white: ramp('#dff4e2', '#24402c'), black: ramp('#2f6e4f', '#0c2016') },
-  { id: 'parchment', name: 'Parchment', white: ramp('#f4e6c4', '#4a3220'), black: ramp('#8a5a3b', '#2a1a10') },
-  { id: 'moonlight', name: 'Moonlight', white: ramp('#eef2fa', '#2a3048'), black: ramp('#2c3354', '#0c0e1c') },
-  { id: 'ink', name: 'Ink & Paper', white: ramp('#fbf8f0', '#1c1c24'), black: ramp('#24242e', '#08080c') },
+  { id: 'woodland', name: 'Birch & Walnut', white: ramp('#efd9a8', '#4a2a17'), black: ramp('#6a3a1e', '#1e1008') },
+  { id: 'ivory', name: 'Ivory & Onyx', white: ramp('#fbf6ea', '#3b3440'), black: ramp('#2c2c38', '#0c0c12') },
+  { id: 'frost', name: 'Frost', white: ramp('#cfe9ff', '#1f3a5c'), black: ramp('#23407a', '#0a1430') },
+  { id: 'ember', name: 'Ember', white: ramp('#ffc861', '#5a2a10'), black: ramp('#7a1c1c', '#200606') },
+  { id: 'royal', name: 'Royal', white: ramp('#f6e2a0', '#5a3a10'), black: ramp('#4a2a8a', '#140a2e') },
+  { id: 'jade', name: 'Jade', white: ramp('#bdeccb', '#1c4028'), black: ramp('#1f5a3c', '#06180e') },
+  { id: 'parchment', name: 'Parchment', white: ramp('#f1dfb0', '#4a3220'), black: ramp('#6a3f24', '#1e1008') },
+  { id: 'moonlight', name: 'Moonlight', white: ramp('#dfe6f6', '#2a3048'), black: ramp('#1e2650', '#080a1c') },
+  { id: 'ink', name: 'Ink & Paper', white: ramp('#ffffff', '#101014'), black: ramp('#202028', '#000000') },
+  { id: 'fireice', name: 'Fire & Ice', white: ramp('#bfe6ff', '#1f3a5c'), black: ramp('#b8362a', '#2a0806'), designs: ELEMENTS, trim: { white: '#f4fbff', black: '#ffa040' } },
 ];
 
 function tone(hex: string, f: number): string {
@@ -89,7 +102,8 @@ export { ramp };
 
 /** RGBA pixels of one piece. */
 export function renderPiece(role: Role, color: 'white' | 'black', set: PieceSetId = 'classic'): Uint8ClampedArray {
-  return renderDesign(DESIGNS[role], (PIECE_SETS.find((p) => p.id === set) ?? PIECE_SETS[0])[color]);
+  const s = PIECE_SETS.find((p) => p.id === set) ?? PIECE_SETS[0];
+  return renderDesign((s.designs ?? DESIGNS)[role], s[color], s.trim ? trimRamp(s.trim[color]) : GOLD);
 }
 
 /** RGBA pixels of one design in a palette, with a trim colour for its gold parts. */
