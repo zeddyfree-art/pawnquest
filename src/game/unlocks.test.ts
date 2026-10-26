@@ -158,4 +158,13 @@ describe('pets grow', () => {
     expect(effectFor('snow', 12)).toBe('fireworks'); // not unlocked yet: the newest instead
     expect(effectFor('none', 20)).toBeNull();
   });
+
+  it('Fire & Ice: beat Ignis and the Frost Giant once each, or lose to them 25 times', () => {
+    const vs = (characterId: string, score: 0 | 1) => game({ characterId, score, winner: score ? 'white' : 'black', termination: 'resign', moves: Array(24).fill('e2e4') });
+    expect(unlocks(progress([vs('ignis', 1)])).pieces.has('fireice')).toBe(false);
+    expect(unlocks(progress([vs('ignis', 1), vs('frost-giant', 1)])).pieces.has('fireice')).toBe(true);
+    const losses = Array.from({ length: 25 }, (_, i) => vs(i % 2 ? 'ignis' : 'frost-giant', 0));
+    expect(unlocks(progress(losses.slice(1))).pieces.has('fireice')).toBe(false);
+    expect(unlocks(progress(losses)).pieces.has('fireice')).toBe(true);
+  });
 });
