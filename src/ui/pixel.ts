@@ -92,6 +92,39 @@ export class Canvas {
   }
 }
 
+/** A canvas whose parts are designed on a w×h unit grid but drawn `scale` times finer: curves come out smoother and
+ * outlines thinner. `dot` fills one design unit; `thin` the lower row of a unit (mouths, brows); `fine` one real
+ * pixel at fractional unit coordinates. */
+export class ScaledCanvas extends Canvas {
+  constructor(
+    readonly uw: number,
+    readonly uh: number,
+    readonly scale = 2,
+  ) {
+    super(uw * scale, uh * scale);
+  }
+  override part(shape: Shape, fill: string, opts: PartOptions = {}) {
+    const S = this.scale;
+    const pattern = opts.pattern;
+    super.part((x, y) => shape(x / S, y / S), fill, {
+      ...opts,
+      pattern: pattern && ((x, y) => pattern(Math.floor(x / S), Math.floor(y / S))),
+      box: opts.box && (opts.box.map((v) => v * S) as PartOptions['box']),
+    });
+  }
+  override dot(x: number, y: number, c: string) {
+    const S = this.scale;
+    for (let dy = 0; dy < S; dy++) for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + dy, c);
+  }
+  thin(x: number, y: number, c: string) {
+    const S = this.scale;
+    for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + S - 1, c);
+  }
+  fine(x: number, y: number, c: string) {
+    this.set(Math.round(x * this.scale), Math.round(y * this.scale), c);
+  }
+}
+
 /** Pixels (colour strings or null, row by row) as a PNG data URL; empty string outside the browser. */
 export function pixelsToUrl(px: (string | null)[], w: number, h: number): string {
   if (typeof document === 'undefined') return '';
