@@ -1,10 +1,12 @@
 // The player's hero, drawn in code like the portraits: a 48×64 full figure (chibi proportions) so all six gear
 // slots show: head, face, body, legs, main hand (viewer's left) and off hand (viewer's right). Pets are 20×20
 // sprites drawn beside the hero. Every part is a smooth shape with its own darker outline and a light rim.
-import { Canvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
+import { Canvas, ScaledCanvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
 
 export const HERO_W = 48;
 export const HERO_H = 64;
+/** Heroes and figures are designed on the 48×64 grid and drawn at twice that, for finer detail. */
+export const HERO_SCALE = 2;
 export const PET_SIZE = 20;
 
 export type Slot = 'head' | 'face' | 'body' | 'legs' | 'main' | 'off';
@@ -65,7 +67,7 @@ const HAND_OFF = { x: 33.8, y: 43.4 };
 
 function drawShadow(cv: Canvas) {
   const s = ellipse(CX, 61.2, 12, 2.2);
-  for (let y = 56; y < HERO_H; y++) for (let x = 0; x < HERO_W; x++) if (s(x + 0.5, y + 0.5)) cv.set(x, y, '#00000033');
+  for (let y = 56; y < HERO_H; y++) for (let x = 0; x < HERO_W; x++) if (s(x + 0.5, y + 0.5)) cv.dot(x, y, '#00000033');
 }
 
 // ---------- hair ----------
@@ -134,7 +136,7 @@ function drawFrontHair(cv: Canvas, l: HeroLook) {
 }
 
 // ---------- face ----------
-function drawFace(cv: Canvas, l: HeroLook, mood: HeroMood) {
+function drawFace(cv: ScaledCanvas, l: HeroLook, mood: HeroMood) {
   const ink = '#3b2617';
   const ey = 18;
   if (l.face === 'skull') {
@@ -152,36 +154,58 @@ function drawFace(cv: Canvas, l: HeroLook, mood: HeroMood) {
     for (let x = 20; x <= 27; x++) cv.dot(x, 23, x % 2 ? '#7a4f2c' : tone(l.skin, -0.2));
     return;
   }
+  const S = cv.scale;
   for (const x of [19, 27]) {
     if (mood === 'happy') {
-      cv.dot(x, ey + 1, ink);
-      cv.dot(x + 1, ey, ink);
-      cv.dot(x + 2, ey + 1, ink);
+      // Closed, smiling arcs.
+      cv.thin(x, ey + 1, ink);
+      cv.thin(x + 1, ey, ink);
+      cv.thin(x + 2, ey + 1, ink);
       continue;
     }
-    for (let dy = 0; dy < 3; dy++) {
-      cv.dot(x, ey + dy, l.eyes);
-      cv.dot(x + 1, ey + dy, l.eyes);
-    }
-    cv.dot(x, ey, '#ffffff');
+    // A tall rounded iris (corners left out) with a one-pixel light catch.
+    for (let fy = 0; fy < 3 * S; fy++)
+      for (let fx = 0; fx < 2 * S; fx++) if (!((fx === 0 || fx === 2 * S - 1) && (fy === 0 || fy === 3 * S - 1))) cv.set(x * S + fx, ey * S + fy, l.eyes);
+    cv.set(x * S + 1, ey * S + 1, '#ffffff');
     if (mood === 'sad') {
-      cv.dot(x - (x < 24 ? 1 : -2), ey - 2, tone(l.hair, -0.2));
-      cv.dot(x + (x < 24 ? 0 : 1), ey - 2, tone(l.hair, -0.2));
+      cv.thin(x - (x < 24 ? 1 : -2), ey - 2, tone(l.hair, -0.2));
+      cv.thin(x + (x < 24 ? 0 : 1), ey - 2, tone(l.hair, -0.2));
     }
   }
+  // Soft round cheeks, every other pixel.
   const blush = tone('#e86a6a', 0.35);
-  for (const x of [16, 17, 30, 31]) cv.dot(x, 22, blush);
-  if (mood === 'sad') [[22, 24], [23, 23], [24, 23], [25, 24]].forEach(([x, y]) => cv.dot(x, y, ink));
-  else if (mood === 'happy') [[22, 22], [23, 23], [24, 23], [25, 22]].forEach(([x, y]) => cv.dot(x, y, ink));
-  else [[23, 23], [24, 23]].forEach(([x, y]) => cv.dot(x, y, ink));
+  for (const cx of [16.5, 31]) for (let y = 21.5; y <= 23; y += 0.5) for (let x = cx - 1.5; x <= cx + 1.5; x += 0.5) if (((x + y) * 2) % 2 === 0 && Math.hypot((x - cx) / 1.7, (y - 22.25) / 0.9) <= 1) cv.fine(x, y, blush);
+  if (mood === 'sad') [[22, 24], [23, 23], [24, 23], [25, 24]].forEach(([x, y]) => cv.thin(x, y, ink));
+  else if (mood === 'happy') [[22, 22], [23, 23], [24, 23], [25, 22]].forEach(([x, y]) => cv.thin(x, y, ink));
+  else [[23, 23], [24, 23]].forEach(([x, y]) => cv.thin(x, y, ink));
 }
 
-function drawBeard(cv: Canvas, l: HeroLook) {
+/** Strands in the hair: only pixels that still have the plain hair colour change, so outlines and rims stay. */
+function hairTexture(cv: ScaledCanvas, l: HeroLook) {
+  if (l.hairStyle === 'none') return;
+  const dark = tone(l.hair, -0.14);
+  const light = tone(l.hair, 0.16);
+  const mid = cv.w / 2;
+  for (let y = 0; y < cv.h * 0.75; y++)
+    for (let x = 0; x < cv.w; x++) {
+      if (cv.get(x, y) !== l.hair) continue;
+      const k = (x + Math.floor(y / 3) * (x < mid ? 1 : -1) + 600) % 6;
+      if (k === 0) cv.set(x, y, dark);
+      else if (k === 3 && y % 4 < 2) cv.set(x, y, light);
+    }
+}
+
+function drawBeard(cv: ScaledCanvas, l: HeroLook) {
   const c = l.hair;
   const mouth = ellipse(CX, 23.4, 2.6, 1);
   switch (l.beard) {
     case 'stubble':
-      for (let y = 21; y <= 27; y++) for (let x = 15; x <= 33; x++) if ((x + y) % 2 === 0 && HEAD(x + 0.5, y + 0.5) && !mouth(x + 0.5, y + 0.5)) cv.dot(x, y, tone(l.skin, -0.22));
+      // Sparse single pixels along the jaw.
+      for (let y = 20.5; y <= 27.5; y += 0.5)
+        for (let x = 14.5; x <= 33.5; x += 0.5) {
+          const h = (((Math.round(x * 2) * 73856093) ^ (Math.round(y * 2) * 19349663)) >>> 0) % 6;
+          if (h === 0 && HEAD(x + 0.25, y + 0.25) && !mouth(x + 0.25, y + 0.25)) cv.fine(x, y, tone(l.skin, -0.22));
+        }
       break;
     case 'mustache':
       cv.part(any(ellipse(21.4, 22.4, 3, 1.3), ellipse(26.6, 22.4, 3, 1.3)), c, { rim: false });
@@ -543,9 +567,9 @@ export interface HeroOptions {
   shadow?: boolean;
 }
 
-/** The hero's pixels: colour strings (or null) for a 48×64 grid, row by row. */
+/** The hero's pixels: colour strings (or null) for a 96×128 grid (the 48×64 design at twice the size), row by row. */
 export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {}): (string | null)[] {
-  const cv = new Canvas(HERO_W, HERO_H);
+  const cv = new ScaledCanvas(HERO_W, HERO_H, HERO_SCALE);
   if (opts.only) {
     const g = outfit[opts.only];
     if (!g) return cv.px;
@@ -584,6 +608,7 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   drawFace(cv, look, opts.mood ?? 'idle');
   drawBeard(cv, look);
   if (hides !== 'all') drawFrontHair(cv, look);
+  hairTexture(cv, look);
   if (outfit.face) drawFaceGear(cv, outfit.face);
   if (outfit.head) drawHeadGear(cv, outfit.head);
   return cv.px;
@@ -780,12 +805,12 @@ const memo = (key: string, make: () => string) => {
 };
 
 export function heroUrl(look: HeroLook, outfit: Outfit, mood: HeroMood = 'idle'): string {
-  return memo(`hero:${JSON.stringify([look, outfit, mood])}`, () => pixelsToUrl(renderHero(look, outfit, { mood }), HERO_W, HERO_H));
+  return memo(`hero:${JSON.stringify([look, outfit, mood])}`, () => pixelsToUrl(renderHero(look, outfit, { mood }), HERO_W * HERO_SCALE, HERO_H * HERO_SCALE));
 }
 
 export function gearIconUrl(art: GearArt): string {
   return memo(`icon:${JSON.stringify(art)}`, () => {
-    const { px, size } = cropSquare(renderHero(ICON_LOOK, { [art.slot]: art } as Outfit, { only: art.slot }), HERO_W, HERO_H);
+    const { px, size } = cropSquare(renderHero(ICON_LOOK, { [art.slot]: art } as Outfit, { only: art.slot }), HERO_W * HERO_SCALE, HERO_H * HERO_SCALE, 4, 28);
     return pixelsToUrl(px, size, size);
   });
 }

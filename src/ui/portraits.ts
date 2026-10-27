@@ -47,35 +47,15 @@ export interface Look {
   backdrop: string;
 }
 
-import { Canvas as PixelCanvas, any, ellipse, lineOf, minus, mirrorAround, only, pixelsToUrl, polygon, rect, tone, type PartOptions, type Pt, type Shape } from './pixel';
+import { ScaledCanvas, any, ellipse, lineOf, minus, mirrorAround, only, pixelsToUrl, polygon, rect, tone, type Pt } from './pixel';
 
 // The parts are designed on a 40-unit grid and drawn at twice that (80×80 pixels): curves come out smoother,
 // outlines finer, and `fine` can place details at half-unit precision.
 const N = 40;
 const S = 2;
-class Canvas extends PixelCanvas {
+class Canvas extends ScaledCanvas {
   constructor() {
-    super(N * S);
-  }
-  override part(shape: Shape, fill: string, opts: PartOptions = {}) {
-    const pattern = opts.pattern;
-    super.part((x, y) => shape(x / S, y / S), fill, {
-      ...opts,
-      pattern: pattern && ((x, y) => pattern(Math.floor(x / S), Math.floor(y / S))),
-      box: opts.box && (opts.box.map((v) => v * S) as PartOptions['box']),
-    });
-  }
-  /** One design unit (a 2×2 block). */
-  override dot(x: number, y: number, c: string) {
-    for (let dy = 0; dy < S; dy++) for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + dy, c);
-  }
-  /** A thin line: the lower half of a design unit (mouths, brows). */
-  thin(x: number, y: number, c: string) {
-    for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + S - 1, c);
-  }
-  /** One real pixel, at half-unit precision. */
-  fine(x: number, y: number, c: string) {
-    this.set(Math.round(x * S), Math.round(y * S), c);
+    super(N, N, S);
   }
 }
 const mirror = (pts: Pt[]): Pt[] => mirrorAround(20, pts);
