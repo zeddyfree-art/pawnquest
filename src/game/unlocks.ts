@@ -4,9 +4,9 @@
 // only winning; nothing expires and nothing is taken away.
 import { CHARACTERS, characterById, WORLDS, type WorldId } from '../data/characters';
 import { ITEMS, type Item } from '../data/gear';
-import type { BoardThemeId } from '../ui/boards';
+import { STARTING_BOARDS, type BoardThemeId } from '../ui/boards';
 import type { PetKind } from '../ui/hero';
-import type { PieceSetId } from '../ui/pieces';
+import { PACK_SETS, STARTING_SETS, type PieceSetId } from '../ui/pieces';
 import { replay } from './chess';
 import { countsAsGame, crownFor, ownMoves, type GameRecord } from './progress';
 
@@ -17,12 +17,13 @@ export type Reward =
   | { kind: 'item'; id: string }
   | { kind: 'title'; id: string };
 
-export type QuestGroup = 'habits' | 'journey' | 'study' | 'conquest';
+export type QuestGroup = 'habits' | 'journey' | 'study' | 'conquest' | 'sets';
 export const QUEST_GROUPS: { id: QuestGroup; name: string; blurb: string }[] = [
   { id: 'habits', name: 'Good habits', blurb: 'Think first, check for blunders, keep fighting, try something new.' },
   { id: 'journey', name: 'The road', blurb: 'Every game counts, win or lose.' },
   { id: 'study', name: 'Study', blurb: 'Look back at your games and get better.' },
   { id: 'conquest', name: 'Conquest', blurb: 'Wins, crowns and ratings.' },
+  { id: 'sets', name: 'Pieces & boards', blurb: 'Win 3 games against an opponent and their piece set is yours; win 5 in a region for its board.' },
 ];
 
 export interface Progress {
@@ -198,6 +199,40 @@ export const QUESTS: Quest[] = [
   habitBreaker('missed-win', ['Missed a win'], 'closer', 'Missed a win'),
 ];
 
+/** Piece sets from the asset pack: 3 wins (a silver crown) against their opponent. */
+const SET_QUESTS: Quest[] = PACK_SETS.filter((s) => s.from).map((s) => {
+  const c = characterById(s.from!);
+  return {
+    group: 'sets',
+    id: `set-${s.id}`,
+    title: s.name,
+    text: `Win 3 games against ${c?.name ?? s.from}.`,
+    rewards: [{ kind: 'pieces', id: s.id }],
+    progress: (p: Progress) => count(wins(p.history).filter((g) => g.characterId === s.from).length, 3),
+  };
+});
+/** Boards from the asset pack: 5 wins in a region. */
+const REGION_BOARDS: [WorldId, BoardThemeId][] = [
+  ['gutter', 'px-mossy-ruins'],
+  ['village', 'px-autumn-maple'],
+  ['castle', 'px-royal'],
+  ['wilds', 'px-rainforest-canopy'],
+  ['underworld', 'px-volcanic'],
+  ['throne', 'px-royal-laurel'],
+];
+const BOARD_QUESTS: Quest[] = REGION_BOARDS.map(([world, board]) => {
+  const w = WORLDS.find((x) => x.id === world)!;
+  return {
+    group: 'sets',
+    id: `board-${world}`,
+    title: `${w.name.replace(/^The /, '')} board`,
+    text: `Win 5 games in ${w.name}.`,
+    rewards: [{ kind: 'board', id: board }],
+    progress: (p: Progress) => count(wins(p.history).filter((g) => characterById(g.characterId)?.world === world).length, 5),
+  };
+});
+QUESTS.push(...SET_QUESTS, ...BOARD_QUESTS);
+
 function goldCrowns(h: readonly GameRecord[]): number {
   const byChar = new Map<string, number>();
   for (const g of wins(h)) byChar.set(g.characterId, (byChar.get(g.characterId) ?? 0) + 1);
@@ -223,8 +258,8 @@ export function unlocks(p: Progress): Unlocks {
   const u: Unlocks = {
     titles: new Set<string>(),
     items: new Set(ITEMS.filter((i) => (!i.from && !i.quest) || (i.from && beaten.has(i.from))).map((i) => i.id)),
-    boards: new Set<BoardThemeId>(['meadow']),
-    pieces: new Set<PieceSetId>(['classic']),
+    boards: new Set<BoardThemeId>(STARTING_BOARDS),
+    pieces: new Set<PieceSetId>(STARTING_SETS),
     pets: new Set<PetKind>(),
     quests: new Set<string>(),
   };

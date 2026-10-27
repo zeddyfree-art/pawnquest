@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CHARACTERS } from '../data/characters';
 import { CLASSES, ITEMS, PETS, itemFrom } from '../data/gear';
-import { BOARD_THEMES } from '../ui/boards';
-import { PIECE_SETS } from '../ui/pieces';
+import { BOARD_THEMES, STARTING_BOARDS } from '../ui/boards';
+import { ALL_SETS, STARTING_SETS } from '../ui/pieces';
 import type { GameRecord } from './progress';
 import { QUESTS, newUnlocks, regionsVisited, unlocks, type Progress } from './unlocks';
 import { WORLDS } from '../data/characters';
@@ -37,16 +37,16 @@ describe('unlocks', () => {
   it('every board, piece set and pet can be earned (or is there from the start)', () => {
     const rewards = QUESTS.flatMap((q) => q.rewards.map((r) => `${r.kind}:${r.id}`));
     expect(new Set(rewards).size).toBe(rewards.length);
-    for (const b of BOARD_THEMES) if (b.id !== 'meadow') expect(rewards, b.id).toContain(`board:${b.id}`);
-    for (const p of PIECE_SETS) if (p.id !== 'classic') expect(rewards, p.id).toContain(`pieces:${p.id}`);
+    for (const b of BOARD_THEMES) if (!STARTING_BOARDS.includes(b.id)) expect(rewards, b.id).toContain(`board:${b.id}`);
+    for (const p of ALL_SETS) if (!STARTING_SETS.includes(p.id)) expect(rewards, p.id).toContain(`pieces:${p.id}`);
     for (const p of PETS) expect(rewards, p.id).toContain(`pet:${p.id}`);
   });
-  it('a new save owns only the starting gear, the meadow board and the classic pieces', () => {
+  it('a new save owns only the starting gear, the starting boards and piece sets', () => {
     const u = unlocks(progress([]));
     expect([...u.items].sort()).toEqual(ITEMS.filter((i) => !i.from && !i.quest).map((i) => i.id).sort());
     expect(u.titles.size).toBe(0);
-    expect([...u.boards]).toEqual(['meadow']);
-    expect([...u.pieces]).toEqual(['classic']);
+    expect([...u.boards]).toEqual(STARTING_BOARDS);
+    expect([...u.pieces]).toEqual(STARTING_SETS);
     expect(u.pets.size).toBe(0);
   });
   it('a first win drops the opponent’s item and completes the right quests', () => {
@@ -166,5 +166,18 @@ describe('pets grow', () => {
     const losses = Array.from({ length: 25 }, (_, i) => vs(i % 2 ? 'ignis' : 'frost-giant', 0));
     expect(unlocks(progress(losses.slice(1))).pieces.has('fireice')).toBe(false);
     expect(unlocks(progress(losses)).pieces.has('fireice')).toBe(true);
+  });
+
+  it('asset pack sets: two from the start, the others for 3 wins against their opponent; boards for 5 wins in a region', () => {
+    const win = (characterId: string) => game({ characterId, moves: Array(24).fill('e2e4') });
+    const u0 = unlocks(progress([]));
+    expect(u0.pieces.has('px-classic-wood') && u0.pieces.has('px-delft-porcelain')).toBe(true);
+    expect(u0.pieces.has('px-dragon-scale')).toBe(false);
+    expect(unlocks(progress([win('ignis'), win('ignis')])).pieces.has('px-dragon-scale')).toBe(false);
+    expect(unlocks(progress([win('ignis'), win('ignis'), win('ignis')])).pieces.has('px-dragon-scale')).toBe(true);
+    const village = CHARACTERS.filter((c) => c.world === 'village').map((c) => c.id);
+    const wins5 = Array.from({ length: 5 }, (_, i) => win(village[i % village.length]));
+    expect(unlocks(progress(wins5.slice(1))).boards.has('px-autumn-maple')).toBe(false);
+    expect(unlocks(progress(wins5)).boards.has('px-autumn-maple')).toBe(true);
   });
 });

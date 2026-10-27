@@ -62,7 +62,8 @@ const CLASSIC = {
 /** A palette from one base colour and an outline colour. */
 const ramp = (base: string, line: string): Palette => ({ line, deep: tone(base, -0.32), shade: tone(base, -0.16), base, light: tone(base, 0.28), high: tone(base, 0.6), carve: tone(base, -0.5) });
 
-export type PieceSetId = 'classic' | 'woodland' | 'ivory' | 'frost' | 'ember' | 'royal' | 'jade' | 'parchment' | 'moonlight' | 'ink' | 'fireice';
+/** Sets drawn in code, and sets from PulsarCP's Pixel Art Chess Asset Pack (`px-…`, PNGs in public/pieces). */
+export type PieceSetId = 'classic' | 'woodland' | 'ivory' | 'frost' | 'ember' | 'royal' | 'jade' | 'parchment' | 'moonlight' | 'ink' | 'fireice' | `px-${string}`;
 export interface PieceSet {
   id: PieceSetId;
   name: string;
@@ -87,6 +88,37 @@ export const PIECE_SETS: PieceSet[] = [
   { id: 'ink', name: 'Ink & Paper', white: ramp('#ffffff', '#101014'), black: ramp('#202028', '#000000') },
   { id: 'fireice', name: 'Fire & Ice', white: ramp('#bfe6ff', '#1f3a5c'), black: ramp('#b8362a', '#2a0806'), designs: ELEMENTS, trim: { white: '#f4fbff', black: '#ffa040' } },
 ];
+
+/** Sets from the Pixel Art Chess Asset Pack by PulsarCP (https://pulsarcp.itch.io/chess, used with permission).
+ * The first two are there from the start; each other one comes from winning 3 games against `from`. */
+export const PACK_SETS: { id: PieceSetId; name: string; pack: string; from?: string }[] = [
+  { id: 'px-classic-wood', name: 'Classic Wood', pack: 'classic-wood' },
+  { id: 'px-delft-porcelain', name: 'Delft Porcelain', pack: 'delft-porcelain' },
+  { id: 'px-autumn-grove', name: 'Autumn Grove', pack: 'autumn-grove', from: 'hobb' },
+  { id: 'px-ember-forge', name: 'Ember Forge', pack: 'ember-forge', from: 'bram' },
+  { id: 'px-toxic-slime', name: 'Toxic Slime', pack: 'toxic-slime', from: 'morwen' },
+  { id: 'px-meteor-iron', name: 'Meteor Iron', pack: 'meteor-iron', from: 'captain-holt' },
+  { id: 'px-candy-kingdom', name: 'Candy Kingdom', pack: 'candy-kingdom', from: 'jester' },
+  { id: 'px-celestial-orbit', name: 'Celestial Orbit', pack: 'celestial-orbit', from: 'sir-cedric' },
+  { id: 'px-royal-tapestry', name: 'Royal Tapestry', pack: 'royal-tapestry', from: 'royal-champion' },
+  { id: 'px-steampunk-brass', name: 'Steampunk Brass', pack: 'steampunk-brass', from: 'spymaster' },
+  { id: 'px-pirate-nautical', name: 'Pirate Nautical', pack: 'pirate-nautical', from: 'scarlet' },
+  { id: 'px-jungle-idol', name: 'Jungle Idol', pack: 'jungle-idol', from: 'thorne' },
+  { id: 'px-fungal-grove', name: 'Fungal Grove', pack: 'fungal-grove', from: 'oakhart' },
+  { id: 'px-dragon-scale', name: 'Dragon Scale', pack: 'dragon-scale', from: 'ignis' },
+  { id: 'px-celestial-arcane', name: 'Celestial Arcane', pack: 'celestial-arcane', from: 'solenne' },
+  { id: 'px-frost-crystal', name: 'Frost Crystal', pack: 'frost-crystal', from: 'frost-giant' },
+  { id: 'px-infernal-obsidian', name: 'Infernal Obsidian', pack: 'infernal-obsidian', from: 'azgar' },
+  { id: 'px-velvet-royal', name: 'Velvet Royal', pack: 'velvet-royal', from: 'count-draven' },
+  { id: 'px-gothic-bone', name: 'Gothic Bone', pack: 'gothic-bone', from: 'bone-oracle' },
+  { id: 'px-cinder-glass', name: 'Cinder Glass', pack: 'cinder-glass', from: 'witch-queen' },
+  { id: 'px-nebula-quartz', name: 'Nebula Quartz', pack: 'nebula-quartz', from: 'lich' },
+  { id: 'px-necro-crown', name: 'Necro Crown', pack: 'necro-crown', from: 'necromancer-king' },
+];
+export const STARTING_SETS: PieceSetId[] = ['classic', ...PACK_SETS.filter((p) => !p.from).map((p) => p.id)];
+/** Every set to choose from: drawn ones and pack ones. */
+export const ALL_SETS: { id: PieceSetId; name: string }[] = [...PIECE_SETS, ...PACK_SETS];
+const packOf = (set: PieceSetId) => PACK_SETS.find((p) => p.id === set)?.pack;
 
 function tone(hex: string, f: number): string {
   const n = parseInt(hex.slice(1), 16);
@@ -162,6 +194,8 @@ let currentSet: PieceSetId = 'classic';
 
 /** A PNG data URL of the piece (browser only; empty string elsewhere). */
 export function pieceDataUrl(role: Role, color: 'white' | 'black', set: PieceSetId = currentSet): string {
+  const pack = packOf(set);
+  if (pack) return `${import.meta.env.BASE_URL}pieces/${pack}/${color}-${role}.png`;
   const key = role + color + set;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
