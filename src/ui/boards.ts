@@ -3,7 +3,8 @@
 // the player can pick another in Profile → Settings.
 import type { WorldId } from '../data/characters';
 
-export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library' | 'maptable' | 'chequered';
+/** Boards drawn in code, and boards from PulsarCP's Pixel Art Chess Asset Pack (`px-…`, PNGs in public/boards). */
+export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library' | 'maptable' | 'chequered' | `px-${string}`;
 
 export interface BoardTheme {
   id: BoardThemeId;
@@ -13,6 +14,8 @@ export interface BoardTheme {
   /** Colour of the frame around the board. */
   frame: string;
   texture: 'grain' | 'cobble' | 'flag' | 'moss' | 'basalt' | 'marble' | 'straw';
+  /** A board image from the asset pack (public/boards/<image>.png) instead of a drawn one. */
+  image?: string;
 }
 
 export const BOARD_THEMES: BoardTheme[] = [
@@ -28,7 +31,18 @@ export const BOARD_THEMES: BoardTheme[] = [
   { id: 'library', name: 'Library', light: '#ead9b8', dark: '#7a5a42', frame: '#3b2617', texture: 'grain' },
   { id: 'maptable', name: 'Map Table', light: '#efdcae', dark: '#a98a5a', frame: '#5a3a22', texture: 'straw' },
   { id: 'chequered', name: 'Chequered Study', light: '#f4f0e6', dark: '#3f5a7a', frame: '#2b2238', texture: 'flag' },
+  // From the Pixel Art Chess Asset Pack by PulsarCP (https://pulsarcp.itch.io/chess, used with permission).
+  { id: 'px-classic-wood', name: 'Walnut & Maple', light: '#cc8d4c', dark: '#6f3619', frame: '#4a2410', texture: 'grain', image: 'classic-wood' },
+  { id: 'px-nature', name: 'Nature', light: '#d6ca9c', dark: '#588f2a', frame: '#3a5e1c', texture: 'grain', image: 'nature' },
+  { id: 'px-mossy-ruins', name: 'Mossy Ruins', light: '#c9cfa8', dark: '#5f7a5a', frame: '#3b4a38', texture: 'grain', image: 'mossy-ruins' },
+  { id: 'px-autumn-maple', name: 'Autumn Maple', light: '#e8b47a', dark: '#a8582a', frame: '#5a2e14', texture: 'grain', image: 'autumn-maple' },
+  { id: 'px-royal', name: 'Royal Velvet', light: '#cfb989', dark: '#6a2a71', frame: '#3a1640', texture: 'grain', image: 'royal' },
+  { id: 'px-rainforest-canopy', name: 'Rainforest Canopy', light: '#b8d8a8', dark: '#2f6a3a', frame: '#1e3e24', texture: 'grain', image: 'rainforest-canopy' },
+  { id: 'px-volcanic', name: 'Volcanic', light: '#dd4811', dark: '#373235', frame: '#1e1a1c', texture: 'grain', image: 'volcanic' },
+  { id: 'px-royal-laurel', name: 'Royal Laurel', light: '#efe0b0', dark: '#6a4a8a', frame: '#3a2a4a', texture: 'grain', image: 'royal-laurel' },
 ];
+/** Boards there from the start. */
+export const STARTING_BOARDS: BoardThemeId[] = ['meadow', 'px-classic-wood', 'px-nature'];
 
 export const REGION_BOARD: Record<WorldId, BoardThemeId> = {
   training: 'meadow',
@@ -171,6 +185,7 @@ export function renderBoard(t: BoardTheme): Uint8ClampedArray {
 
 const cache = new Map<string, string>();
 export function boardDataUrl(t: BoardTheme): string {
+  if (t.image) return `${import.meta.env.BASE_URL}boards/${t.image}.png`;
   const hit = cache.get(t.id);
   if (hit !== undefined) return hit;
   if (typeof document === 'undefined') return '';

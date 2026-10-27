@@ -14,13 +14,13 @@ import { BOARD_THEMES, boardDataUrl } from '../boards';
 import { GearIcon, HeroSprite, PetIcon } from '../components';
 import { SLOTS, type Slot } from '../hero';
 import { useNav } from '../nav';
-import { PIECE_SETS, pieceDataUrl } from '../pieces';
+import { ALL_SETS, pieceDataUrl } from '../pieces';
 
 type Tab = 'gear' | 'quests' | 'collection';
 
 export function rewardName(r: Reward): string {
   if (r.kind === 'board') return `${BOARD_THEMES.find((t) => t.id === r.id)?.name} board`;
-  if (r.kind === 'pieces') return `${PIECE_SETS.find((p) => p.id === r.id)?.name} pieces`;
+  if (r.kind === 'pieces') return `${ALL_SETS.find((p) => p.id === r.id)?.name} pieces`;
   if (r.kind === 'item') return itemById(r.id)?.name ?? r.id;
   if (r.kind === 'title') return `title “${TITLES[r.id] ?? r.id}”`;
   return petById(r.id)?.name ?? r.id;
@@ -273,7 +273,7 @@ export function HeroScreen() {
           <div className="panel">
             <h2>Pieces</h2>
             <div className="collection">
-              {PIECE_SETS.map((p) => {
+              {ALL_SETS.map((p) => {
                 const owned = u.pieces.has(p.id);
                 const q = questFor({ kind: 'pieces', id: p.id });
                 return (

@@ -515,3 +515,5 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 
 /* Victory effects */
 .victory-fx { position: fixed; inset: 0; pointer-events: none; z-index: 30; width: 100vw; height: 100vh; }
+
+.piece-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }

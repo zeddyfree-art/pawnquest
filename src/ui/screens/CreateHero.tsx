@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CLASSES, EYES, HAIR_COLORS, HAIR_STYLES, SKINS, classById, newHero, type Hero } from '../../data/gear';
 import { levelFor } from '../../game/progress';
 import { useSave } from '../../store/save';
+import { ALL_SETS, pieceDataUrl, STARTING_SETS } from '../pieces';
 import { HeroSprite } from '../components';
 import type { HeroLook } from '../hero';
 import { useNav } from '../nav';
@@ -14,6 +15,8 @@ export function CreateHero() {
   const existing = useSave((s) => s.hero);
   const xp = useSave((s) => s.xp);
   const setHero = useSave((s) => s.setHero);
+  const pieceSet = useSave((s) => s.settings.pieceSet);
+  const setSettings = useSave((s) => s.setSettings);
   const go = useNav((s) => s.go);
   const level = levelFor(xp).level;
   const [name, setName] = useState(existing?.name ?? '');
@@ -98,6 +101,24 @@ export function CreateHero() {
             })}
           </div>
         </fieldset>
+
+        {!existing && (
+          <fieldset>
+            <legend>Pieces</legend>
+            <div className="piece-choice" role="radiogroup" aria-label="Pieces">
+              {STARTING_SETS.map((id) => (
+                <button key={id} role="radio" aria-checked={pieceSet === id} className={`pick wide${pieceSet === id ? ' on' : ''}`} onClick={() => setSettings({ pieceSet: id })}>
+                  <span className="piece-pair">
+                    <img src={pieceDataUrl('queen', 'white', id)} alt="" width={32} height={32} />
+                    <img src={pieceDataUrl('knight', 'black', id)} alt="" width={32} height={32} />
+                  </span>
+                  <small>{ALL_SETS.find((x) => x.id === id)?.name}</small>
+                </button>
+              ))}
+            </div>
+            <small className="muted">More sets come with quests. You can change this any time on the Hero screen.</small>
+          </fieldset>
+        )}
 
         <fieldset>
           <legend>Eyes</legend>

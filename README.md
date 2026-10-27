@@ -95,6 +95,8 @@ roster is `src/data/characters.ts` and the opening books are `src/data/openings.
 - Fonts: Pixelify Sans and Nunito (SIL Open Font License), served from the app itself.
 - Music and jingles: [Ninja Adventure](https://pixel-boy.itch.io/ninja-adventure-asset-pack) by Pixel-boy and
   AAA (CC0), converted to MP3 in `public/audio` (see `public/audio/README.md`).
+- Piece sets and boards marked `px-`: [Pixel Art Chess Asset Pack](https://pulsarcp.itch.io/chess) by
+  [PulsarCP](https://pulsarcp.itch.io/), used with the author's permission (see `public/pieces/CREDITS.md`).
 
 ## License
 

@@ -250,7 +250,16 @@ export function ProfileScreen() {
           <a href="https://github.com/Dash1971/maia-chess-android" target="_blank" rel="noreferrer">
             Mobile Maia
           </a>
-          . The board is Lichess’s chessground; the rules come from chessops.
+          . The board is Lichess’s chessground; the rules come from chessops. Music: Ninja Adventure by Pixel-boy and AAA (CC0). Many
+          piece sets and boards come from the{' '}
+          <a href="https://pulsarcp.itch.io/chess" target="_blank" rel="noreferrer">
+            Pixel Art Chess Asset Pack
+          </a>{' '}
+          by{' '}
+          <a href="https://pulsarcp.itch.io/" target="_blank" rel="noreferrer">
+            PulsarCP
+          </a>
+          , used with permission. Thank you!
         </p>
         <p className="muted">Ratings are Pawnquest’s own scale and are not the same as Lichess or Chess.com ratings.</p>
         <p className="muted small">
