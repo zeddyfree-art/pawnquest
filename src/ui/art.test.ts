@@ -5,7 +5,7 @@ import { BOARD_THEMES, REGION_BOARD, renderBoard } from './boards';
 import { PIECE_SETS, PIECE_SIZE, renderPiece, ROLES } from './pieces';
 import { EYES, HAIR_COLORS, HAIR_STYLES, ITEMS, PETS, SKINS } from '../data/gear';
 import { renderHero, renderPet, type Outfit } from './hero';
-import { BUST_SIZE, renderBust } from './portraits';
+import { BUST_PX, renderBust } from './portraits';
 
 describe('art drawn in code', () => {
   it('every piece fills a good part of its 64×64 square, with an outline', () => {
@@ -35,7 +35,7 @@ describe('art drawn in code', () => {
       expect(look, c.id).toBeDefined();
       for (const mood of ['idle', 'thinking', 'smug', 'defeated'] as const) {
         const px = renderBust(look, mood);
-        expect(px.length).toBe(BUST_SIZE * BUST_SIZE);
+        expect(px.length).toBe(BUST_PX * BUST_PX);
         expect(px.every((p) => p !== null)).toBe(true);
       }
       expect(renderBust(look, 'idle')).not.toEqual(renderBust(look, 'defeated'));

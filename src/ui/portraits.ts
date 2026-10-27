@@ -47,12 +47,35 @@ export interface Look {
   backdrop: string;
 }
 
-import { Canvas as PixelCanvas, any, ellipse, lineOf, minus, mirrorAround, only, pixelsToUrl, polygon, rect, tone, type Pt } from './pixel';
+import { Canvas as PixelCanvas, any, ellipse, lineOf, minus, mirrorAround, only, pixelsToUrl, polygon, rect, tone, type PartOptions, type Pt, type Shape } from './pixel';
 
+// The parts are designed on a 40-unit grid and drawn at twice that (80×80 pixels): curves come out smoother,
+// outlines finer, and `fine` can place details at half-unit precision.
 const N = 40;
+const S = 2;
 class Canvas extends PixelCanvas {
   constructor() {
-    super(N);
+    super(N * S);
+  }
+  override part(shape: Shape, fill: string, opts: PartOptions = {}) {
+    const pattern = opts.pattern;
+    super.part((x, y) => shape(x / S, y / S), fill, {
+      ...opts,
+      pattern: pattern && ((x, y) => pattern(Math.floor(x / S), Math.floor(y / S))),
+      box: opts.box && (opts.box.map((v) => v * S) as PartOptions['box']),
+    });
+  }
+  /** One design unit (a 2×2 block). */
+  override dot(x: number, y: number, c: string) {
+    for (let dy = 0; dy < S; dy++) for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + dy, c);
+  }
+  /** A thin line: the lower half of a design unit (mouths, brows). */
+  thin(x: number, y: number, c: string) {
+    for (let dx = 0; dx < S; dx++) this.set(x * S + dx, y * S + S - 1, c);
+  }
+  /** One real pixel, at half-unit precision. */
+  fine(x: number, y: number, c: string) {
+    this.set(Math.round(x * S), Math.round(y * S), c);
   }
 }
 const mirror = (pts: Pt[]): Pt[] => mirrorAround(20, pts);
@@ -190,13 +213,19 @@ function drawFace(cv: Canvas, l: Look, mood: Mood) {
     return;
   }
   if (l.face === 'buttons') {
+    // Sewn-on buttons: round, with two holes and a cross of thread.
     for (const x of [lx, rx]) {
-      cv.dot(x, ey, '#3b2617');
-      cv.dot(x + 1, ey, '#3b2617');
-      cv.dot(x, ey + 1, '#3b2617');
-      cv.dot(x + 1, ey + 1, '#3b2617');
+      const cx = (x + 1) * S;
+      const cy = (ey + 1) * S;
+      for (let dy = -3; dy <= 2; dy++)
+        for (let dx = -3; dx <= 2; dx++) {
+          const d = Math.hypot(dx + 0.5, dy + 0.5);
+          if (d <= 3.2) cv.set(cx + dx, cy + dy, d > 2.3 ? '#2b1a12' : '#5d3a22');
+        }
+      for (const [dx, dy] of [[-1, -1], [0, 0], [-1, 0], [0, -1]]) cv.set(cx + dx, cy + dy, '#d8b77a');
     }
     for (let x = 16; x <= 24; x++) cv.dot(x, 22 + (mood === 'defeated' ? (x === 16 || x === 24 ? 1 : 0) : mood === 'idle' ? 0 : x === 16 || x === 24 ? -1 : 0), x % 2 ? '#3b2617' : l.skin);
+    moodExtras(cv, mood, lx, ey);
     return;
   }
   // Eyes: a 2×2 iris with a light catch, as in cosy pixel games; the mood moves and shapes them.
@@ -222,8 +251,11 @@ function drawFace(cv: Canvas, l: Look, mood: Mood) {
       cv.dot(x + 1, ey + 1, eye);
       continue;
     }
-    for (const [ox, oy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) cv.dot(x + ox + dx, ey + oy + up, eye);
-    cv.dot(x + dx + (mood === 'thinking' ? 0 : 1), ey + up, hi);
+    // A rounded iris (its corners left out) with a one-pixel light catch.
+    const ix = (x + dx) * S;
+    const iy = (ey + up) * S;
+    for (let fy = 0; fy < 4; fy++) for (let fx = 0; fx < 4; fx++) if ((fx === 0 || fx === 3) && (fy === 0 || fy === 3)) continue; else cv.set(ix + fx, iy + fy, eye);
+    cv.set(ix + (mood === 'thinking' ? 1 : 2), iy + 1, hi);
   }
   // Brows.
   const brow = tone(l.hairStyle === 'none' ? l.skin : l.hair, -0.3);
@@ -236,36 +268,40 @@ function drawFace(cv: Canvas, l: Look, mood: Mood) {
     // Worried: raised towards the middle.
     defeated: [[lx - 1, 16], [lx, 15], [lx + 1, 14], [rx, 14], [rx + 1, 15], [rx + 2, 16]],
   };
-  for (const [x, y] of brows[mood]) cv.dot(x, y, brow);
+  for (const [x, y] of brows[mood]) cv.thin(x, y, brow);
   // Nose.
-  cv.dot(20, 20, tone(l.skin, -0.18));
-  cv.dot(19, 20, tone(l.skin, -0.1));
+  cv.thin(20, 20, tone(l.skin, -0.18));
+  cv.thin(19, 20, tone(l.skin, -0.1));
   // Mouth.
   const m = tone(l.skin, -0.5);
   if (mood === 'idle') {
-    [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m));
-    cv.dot(17, 21, m);
-    cv.dot(22, 21, m);
+    [18, 19, 20, 21].forEach((x) => cv.thin(x, 22, m));
+    cv.thin(17, 21, m);
+    cv.thin(22, 21, m);
   }
   if (mood === 'thinking') {
     // A small "hmm", pulled to one side.
-    [20, 21].forEach((x) => cv.dot(x, 22, m));
-    cv.dot(22, 21, m);
+    [20, 21].forEach((x) => cv.thin(x, 22, m));
+    cv.thin(22, 21, m);
   }
   if (mood === 'smug') {
     // A wide grin with teeth, higher on one side.
-    [18, 19, 20, 21, 22].forEach((x) => cv.dot(x, 21, '#fff8ec'));
-    [18, 19, 20, 21, 22].forEach((x) => cv.dot(x, 22, m));
-    cv.dot(17, 21, m);
-    cv.dot(23, 21, m);
-    cv.dot(24, 20, m);
+    [18, 19, 20, 21, 22].forEach((x) => cv.thin(x, 21, '#fff8ec'));
+    [18, 19, 20, 21, 22].forEach((x) => cv.thin(x, 22, m));
+    cv.thin(17, 21, m);
+    cv.thin(23, 21, m);
+    cv.thin(24, 20, m);
   }
   if (mood === 'defeated') {
-    [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m));
-    cv.dot(17, 23, m);
-    cv.dot(22, 23, m);
+    [18, 19, 20, 21].forEach((x) => cv.thin(x, 22, m));
+    cv.thin(17, 23, m);
+    cv.thin(22, 23, m);
   }
-  // Mood extras.
+  moodExtras(cv, mood, lx, ey);
+}
+
+/** What a mood adds around the face: a tear and sweat, thought dots, a sparkle. */
+function moodExtras(cv: Canvas, mood: Mood, lx: number, ey: number) {
   if (mood === 'defeated') {
     // A tear, and a drop of sweat.
     cv.dot(lx, ey + 2, '#8fd3ff');
@@ -289,7 +325,12 @@ function drawBeard(cv: Canvas, l: Look) {
   const c = l.hair;
   switch (l.beard) {
     case 'stubble':
-      for (let y = 21; y <= 25; y++) for (let x = 14; x <= 26; x++) if ((x + y) % 2 === 0 && HEAD(x + 0.5, y + 0.5) && !(y === 22 && x >= 18 && x <= 21)) cv.dot(x, y, tone(l.skin, -0.25));
+      // Sparse single pixels along the jaw, a little denser towards the chin.
+      for (let y = 20.5; y <= 25.5; y += 0.5)
+        for (let x = 13.5; x <= 26.5; x += 0.5) {
+          const h = (((Math.round(x * 2) * 73856093) ^ (Math.round(y * 2) * 19349663)) >>> 0) % 6;
+          if (h === 0 && HEAD(x + 0.25, y + 0.25) && !(y >= 21.5 && y <= 23 && x >= 17.5 && x <= 22.5)) cv.fine(x, y, tone(l.skin, -0.22));
+        }
       break;
     case 'mustache':
       cv.part(any(ellipse(18, 21.2, 2.6, 1.2), ellipse(22, 21.2, 2.6, 1.2)), c, { rim: false });
@@ -419,39 +460,33 @@ function drawAccessories(cv: Canvas, l: Look) {
     switch (a) {
       case 'eyepatch':
         cv.part(ellipse(24.5, 17.5, 2.4, 2.1), '#2b2238', { rim: false });
-        for (let x = 12; x <= 28; x++) cv.dot(x, 14 + Math.round((x - 12) / 8), '#2b2238');
+        for (let x = 12; x <= 28; x++) cv.thin(x, 14 + Math.round((x - 12) / 8), '#2b2238');
         break;
       case 'scar':
-        [0, 1, 2, 3].forEach((i) => cv.dot(14 + i, 18 + i, tone(l.skin, -0.35)));
+        for (let i = 0; i <= 7; i++) cv.fine(14 + i / 2, 18 + i / 2, tone(l.skin, -0.35));
         break;
       case 'glasses':
-        for (const x of [14, 23]) {
-          [0, 1, 2, 3].forEach((i) => cv.dot(x + i, 16, '#3b2617'));
-          [0, 1, 2, 3].forEach((i) => cv.dot(x + i, 19, '#3b2617'));
-          cv.dot(x, 17, '#3b2617');
-          cv.dot(x, 18, '#3b2617');
-          cv.dot(x + 3, 17, '#3b2617');
-          cv.dot(x + 3, 18, '#3b2617');
-        }
-        cv.dot(18, 17, '#3b2617');
-        cv.dot(19, 17, '#3b2617');
-        cv.dot(20, 17, '#3b2617');
-        cv.dot(21, 17, '#3b2617');
-        cv.dot(22, 17, '#3b2617');
+        // Thin round frames with a glint, and a bridge.
+        for (const x of [13.5, 22.5])
+          for (let a = 0; a < 24; a++) cv.fine(x + 2 + 2.1 * Math.cos((a / 24) * 2 * Math.PI), 18 + 1.9 * Math.sin((a / 24) * 2 * Math.PI), '#3b2617');
+        for (const x of [14.5, 23.5]) cv.fine(x, 17, '#ffffff');
+        for (let x = 17.5; x <= 22.5; x += 0.5) cv.fine(x, 17.5, '#3b2617');
         break;
       case 'monocle':
-        [[23, 16], [24, 15], [25, 15], [26, 16], [26, 17], [26, 18], [25, 19], [24, 19], [23, 18], [23, 17]].forEach(([x, y]) => cv.dot(x, y, '#f2b33d'));
-        [20, 21, 22, 23, 24, 25].forEach((i, k) => cv.dot(26, 20 + k, i % 2 ? '#f2b33d' : '#cf8f2a'));
+        for (let a = 0; a < 26; a++) cv.fine(24.8 + 2.2 * Math.cos((a / 26) * 2 * Math.PI), 17.6 + 2.2 * Math.sin((a / 26) * 2 * Math.PI), '#f2b33d');
+        cv.fine(24, 16.5, '#ffffff');
+        for (let k = 0; k < 12; k++) cv.fine(27 + (k % 2) / 2, 19.5 + k / 2, k % 2 ? '#f2b33d' : '#cf8f2a');
         break;
       case 'earring':
         cv.dot(28, 20, '#f2b33d');
         cv.dot(28, 21, '#f2b33d');
         break;
       case 'freckles':
-        [[15, 20], [17, 21], [23, 20], [25, 21], [16, 19], [24, 19]].forEach(([x, y]) => cv.dot(x, y, tone(l.skin, -0.25)));
+        [[15, 20], [16.5, 21], [17.5, 20], [23, 20], [24, 21], [25.5, 20], [16, 19], [24.5, 19]].forEach(([x, y]) => cv.fine(x, y, tone(l.skin, -0.25)));
         break;
       case 'blush':
-        [14, 15, 25, 26].forEach((x) => cv.dot(x, 20, tone('#e98ab0', 0.1)));
+        // Soft round cheeks, every other pixel.
+        for (const cx of [15, 25]) for (let y = 19.5; y <= 21; y += 0.5) for (let x = cx - 1.5; x <= cx + 1.5; x += 0.5) if (((x + y) * 2) % 2 === 0 && Math.hypot((x - cx) / 1.6, (y - 20.25) / 0.9) <= 1) cv.fine(x, y, tone('#e98ab0', 0.1));
         break;
       case 'fangs':
         cv.dot(18, 23, '#ffffff');
@@ -461,11 +496,11 @@ function drawAccessories(cv: Canvas, l: Look) {
         cv.part(polygon([[11.5, 19.5], [28.5, 19.5], [27, 25], [20, 27.5], [13, 25]]), l.cloth2);
         break;
       case 'warpaint':
-        [14, 15, 16].forEach((x) => cv.dot(x, 20, '#d0443a'));
-        [23, 24, 25].forEach((x) => cv.dot(x, 20, '#d0443a'));
+        for (const y of [19.5, 20.5]) for (let i = 0; i < 6; i++) { cv.fine(14 + i / 2, y, '#d0443a'); cv.fine(23 + i / 2, y, '#d0443a'); }
         break;
       case 'stitches':
-        [[12, 15], [13, 16], [26, 22], [27, 21], [26, 20]].forEach(([x, y]) => cv.dot(x, y, '#5d3a22'));
+        // Little cross stitches.
+        for (const [x, y] of [[12.5, 15.5], [26.5, 21]]) for (const [dx, dy] of [[0, 0], [0.5, 0.5], [1, 1], [1, 0], [0, 1]]) cv.fine(x + dx, y + dy, '#5d3a22');
         break;
       case 'glow':
         break;
@@ -478,12 +513,34 @@ function drawBackdrop(cv: Canvas, l: Look) {
   for (let y = 0; y < N; y++)
     for (let x = 0; x < N; x++) {
       const d = Math.hypot(x - 20, y - 16) / 26;
-      cv.set(x, y, d < 0.55 ? inner : d < 0.85 ? tone(l.backdrop, 0.18) : l.backdrop);
+      cv.dot(x, y, d < 0.55 ? inner : d < 0.85 ? tone(l.backdrop, 0.18) : l.backdrop);
     }
-  if (l.accessories.includes('glow')) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (Math.hypot(x - 20, y - 16) < 15 && (x * 13 + y * 7) % 19 === 0) cv.set(x, y, '#7df0c8');
+  if (l.accessories.includes('glow')) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (Math.hypot(x - 20, y - 16) < 15 && (x * 13 + y * 7) % 19 === 0) cv.dot(x, y, '#7df0c8');
 }
 
-/** The pixels of a bust: colour strings (or null) for a 40×40 grid, row by row. */
+/** Fine texture on the flat fills: strands in the hair, soft folds in the clothing. Only pixels that still have
+ * the exact fill colour are touched, so outlines, rims, shading and details stay as they are. */
+function texture(cv: Canvas, l: Look) {
+  const W = N * S;
+  const hairDark = tone(l.hair, -0.14);
+  const hairLight = tone(l.hair, 0.16);
+  const clothDark = tone(l.cloth, -0.08);
+  for (let y = 0; y < W; y++)
+    for (let x = 0; x < W; x++) {
+      const c = cv.get(x, y);
+      if (l.hairStyle !== 'none' && c === l.hair && (l.hat ?? l.cloth) !== l.hair) {
+        // Strands that fall down and slightly outwards from the parting.
+        const k = (x + Math.floor(y / 3) * (x < W / 2 ? 1 : -1)) % 6;
+        if (k === 0) cv.set(x, y, hairDark);
+        else if (k === 3 && y % 4 < 2) cv.set(x, y, hairLight);
+      } else if (c === l.cloth && y > 54) {
+        // A few vertical folds below the shoulders.
+        if ((x * 7) % 23 === 0 && (x + y) % 3 !== 0) cv.set(x, y, clothDark);
+      }
+    }
+}
+
+/** The pixels of a bust: colour strings (or null) for an 80×80 grid, row by row. */
 export function renderBust(l: Look, mood: Mood): (string | null)[] {
   const cv = new Canvas();
   drawBackdrop(cv, l);
@@ -495,10 +552,13 @@ export function renderBust(l: Look, mood: Mood): (string | null)[] {
   drawFrontHair(cv, l);
   drawHeadwear(cv, l);
   drawAccessories(cv, l);
+  texture(cv, l);
   return cv.px;
 }
 
+/** Logical size (layout); the image itself is BUST_PX wide. */
 export const BUST_SIZE = N;
+export const BUST_PX = N * S;
 
 const cache = new Map<string, string>();
 /** The bust as a PNG data URL (browser only). */
@@ -506,7 +566,7 @@ export function bustUrl(id: string, l: Look, mood: Mood): string {
   const key = `${id}:${mood}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
-  const url = pixelsToUrl(renderBust(l, mood), N, N);
+  const url = pixelsToUrl(renderBust(l, mood), N * S, N * S);
   if (url) cache.set(key, url);
   return url;
 }
