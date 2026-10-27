@@ -8,6 +8,8 @@ export const HERO_H = 64;
 /** Heroes and figures are designed on the 48×64 grid and drawn at twice that, for finer detail. */
 export const HERO_SCALE = 2;
 export const PET_SIZE = 20;
+/** Pets are designed on their 20 (or 26) unit grid and drawn at twice that. */
+export const PET_SCALE = 2;
 
 export type Slot = 'head' | 'face' | 'body' | 'legs' | 'main' | 'off';
 export const SLOTS: Slot[] = ['head', 'face', 'body', 'legs', 'main', 'off'];
@@ -663,10 +665,16 @@ export function renderPet(kind: PetKind, stage: PetStage = 0, scholar: Scholar =
   const P = (pts: Pt[]) => polygon(pts.map(([x, y]) => [tx(x), ty(y)] as Pt));
   const Sg = (x0: number, y0: number, x1: number, y1: number, w: number) => segment(tx(x0), ty(y0), tx(x1), ty(y1), w * k);
   const dot = (x: number, y: number, c: string) => cv.dot(Math.round(tx(x)), Math.round(ty(y)), c);
-  const eyes = (pts: Pt[], c = '#2b1a12') => pts.forEach(([x, y]) => (dot(x, y, c), dot(x, y + 1, c)));
-  const cv = new Canvas(N);
+  // Eyes: a tall dark oval with a one-pixel light catch.
+  const eyes = (pts: Pt[], c = '#2b1a12') =>
+    pts.forEach(([x, y]) => {
+      dot(x, y, c);
+      dot(x, y + 1, c);
+      cv.set(Math.round(tx(x)) * PET_SCALE, Math.round(ty(y)) * PET_SCALE, c === '#2b1a12' ? '#ffffff' : tone(c, 0.6));
+    });
+  const cv = new ScaledCanvas(N, N, PET_SCALE);
   const shadow: Shape = E(10, 18.6, 6, 1.2);
-  if (kind !== 'ghost' && kind !== 'bat') for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shadow(x + 0.5, y + 0.5)) cv.set(x, y, '#00000033');
+  if (kind !== 'ghost' && kind !== 'bat') for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (shadow(x + 0.5, y + 0.5)) cv.dot(x, y, '#00000033');
   // Grown dragons get wings, behind the body.
   if (kind === 'dragon' && stage === 2) cv.part(any(P([[12, 11], [16, 3], [19, 6], [17, 11]]), P([[9, 11], [5, 4], [3, 9], [7, 12]])), '#3f8a44');
   switch (kind) {
@@ -817,7 +825,7 @@ export function gearIconUrl(art: GearArt): string {
 
 export function petUrl(kind: PetKind, stage: PetStage = 0, scholar: Scholar = 0): string {
   const sc = kind === 'owl' ? scholar : 0;
-  return memo(`pet:${kind}:${stage}:${sc}`, () => pixelsToUrl(renderPet(kind, stage, sc), petSize(stage), petSize(stage)));
+  return memo(`pet:${kind}:${stage}:${sc}`, () => pixelsToUrl(renderPet(kind, stage, sc), petSize(stage) * PET_SCALE, petSize(stage) * PET_SCALE));
 }
 
 const ICON_LOOK: HeroLook = { skin: '#efc29a', hair: '#5a3a22', hairStyle: 'none', eyes: '#2b2238' };
