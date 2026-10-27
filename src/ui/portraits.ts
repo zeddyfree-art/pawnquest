@@ -199,54 +199,77 @@ function drawFace(cv: Canvas, l: Look, mood: Mood) {
     for (let x = 16; x <= 24; x++) cv.dot(x, 22 + (mood === 'defeated' ? (x === 16 || x === 24 ? 1 : 0) : mood === 'idle' ? 0 : x === 16 || x === 24 ? -1 : 0), x % 2 ? '#3b2617' : l.skin);
     return;
   }
-  // Eyes: white with a pupil that looks where the mood says.
-  const look = mood === 'thinking' ? -1 : 0;
+  // Eyes: a 2×2 iris with a light catch, as in cosy pixel games; the mood moves and shapes them.
+  const hi = '#ffffff';
+  const lid = tone(l.skin, -0.3);
+  const up = mood === 'thinking' ? -1 : 0;
   for (const x of [lx, rx]) {
     if (mood === 'defeated') {
+      // Closed and turned down.
       cv.dot(x - 1, ey + 1, ink);
       cv.dot(x, ey, ink);
       cv.dot(x + 1, ey, ink);
       cv.dot(x + 2, ey + 1, ink);
       continue;
     }
-    cv.dot(x, ey, '#ffffff');
-    cv.dot(x + 1, ey, '#ffffff');
-    cv.dot(x, ey + 1, '#ffffff');
-    cv.dot(x + 1, ey + 1, '#ffffff');
-    const pupilX = x + (x === lx ? 1 : 0) + (look < 0 ? -(x === lx ? 1 : 0) : 0);
-    cv.dot(pupilX, ey + (mood === 'thinking' ? 0 : 1), eye);
-    cv.dot(pupilX, ey + (mood === 'thinking' ? -0 : 0), mood === 'smug' ? ink : eye);
+    const dx = mood === 'thinking' ? (x === lx ? -1 : 0) : 0;
     if (mood === 'smug') {
-      cv.dot(x, ey, tone(l.skin, -0.25));
-      cv.dot(x + 1, ey, tone(l.skin, -0.25));
+      // Half closed: a heavy lid over the top half.
+      cv.dot(x - 1, ey, lid);
+      cv.dot(x, ey, lid);
+      cv.dot(x + 1, ey, lid);
+      cv.dot(x, ey + 1, eye);
+      cv.dot(x + 1, ey + 1, eye);
+      continue;
     }
+    for (const [ox, oy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) cv.dot(x + ox + dx, ey + oy + up, eye);
+    cv.dot(x + dx + (mood === 'thinking' ? 0 : 1), ey + up, hi);
   }
   // Brows.
-  const brow = tone(l.hairStyle === 'none' ? l.skin : l.hair, -0.25);
-  const browY: Record<Mood, [number, number, number, number]> = {
-    idle: [15, 15, 15, 15],
-    thinking: [14, 15, 15, 15],
-    smug: [15, 15, 14, 13],
-    defeated: [14, 15, 15, 14],
+  const brow = tone(l.hairStyle === 'none' ? l.skin : l.hair, -0.3);
+  const brows: Record<Mood, [number, number][]> = {
+    idle: [[lx - 1, 15], [lx, 15], [lx + 1, 15], [rx, 15], [rx + 1, 15], [rx + 2, 15]],
+    // One brow up: puzzling it out.
+    thinking: [[lx - 1, 15], [lx, 15], [lx + 1, 15], [rx, 13], [rx + 1, 13], [rx + 2, 14]],
+    // Lowered and sly on one side, arched on the other.
+    smug: [[lx - 1, 15], [lx, 15], [lx + 1, 16], [rx, 14], [rx + 1, 13], [rx + 2, 13]],
+    // Worried: raised towards the middle.
+    defeated: [[lx - 1, 16], [lx, 15], [lx + 1, 14], [rx, 14], [rx + 1, 15], [rx + 2, 16]],
   };
-  const [a, b, c, d] = browY[mood];
-  cv.dot(lx - 1, a, brow);
-  cv.dot(lx, a, brow);
-  cv.dot(lx + 1, b, brow);
-  cv.dot(rx, c, brow);
-  cv.dot(rx + 1, d, brow);
-  cv.dot(rx + 2, d, brow);
+  for (const [x, y] of brows[mood]) cv.dot(x, y, brow);
   // Nose.
   cv.dot(20, 20, tone(l.skin, -0.18));
   cv.dot(19, 20, tone(l.skin, -0.1));
   // Mouth.
   const m = tone(l.skin, -0.5);
-  if (mood === 'idle') [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m)), cv.dot(17, 21, m), cv.dot(22, 21, m);
-  if (mood === 'thinking') [19, 20].forEach((x) => cv.dot(x, 22, m));
-  if (mood === 'smug') [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m)), cv.dot(22, 21, m), cv.dot(23, 20, m);
-  if (mood === 'defeated') [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m)), cv.dot(17, 23, m), cv.dot(22, 23, m);
+  if (mood === 'idle') {
+    [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m));
+    cv.dot(17, 21, m);
+    cv.dot(22, 21, m);
+  }
+  if (mood === 'thinking') {
+    // A small "hmm", pulled to one side.
+    [20, 21].forEach((x) => cv.dot(x, 22, m));
+    cv.dot(22, 21, m);
+  }
+  if (mood === 'smug') {
+    // A wide grin with teeth, higher on one side.
+    [18, 19, 20, 21, 22].forEach((x) => cv.dot(x, 21, '#fff8ec'));
+    [18, 19, 20, 21, 22].forEach((x) => cv.dot(x, 22, m));
+    cv.dot(17, 21, m);
+    cv.dot(23, 21, m);
+    cv.dot(24, 20, m);
+  }
+  if (mood === 'defeated') {
+    [18, 19, 20, 21].forEach((x) => cv.dot(x, 22, m));
+    cv.dot(17, 23, m);
+    cv.dot(22, 23, m);
+  }
   // Mood extras.
   if (mood === 'defeated') {
+    // A tear, and a drop of sweat.
+    cv.dot(lx, ey + 2, '#8fd3ff');
+    cv.dot(lx, ey + 3, '#5fb0e8');
     cv.dot(27, 13, '#8fd3ff');
     cv.dot(27, 14, '#8fd3ff');
     cv.dot(28, 14, '#5fb0e8');
@@ -255,6 +278,10 @@ function drawFace(cv: Canvas, l: Look, mood: Mood) {
     cv.dot(31, 6, '#3b2617');
     cv.dot(33, 5, '#3b2617');
     cv.dot(35, 4, '#3b2617');
+  }
+  if (mood === 'smug') {
+    // A little sparkle of confidence.
+    [[32, 7], [31, 8], [32, 8], [33, 8], [32, 9]].forEach(([x, y]) => cv.dot(x, y, '#fff2b8'));
   }
 }
 
