@@ -98,3 +98,38 @@ test('a tap still lands on the right square after the layout above the board mov
   await page.getByRole('button', { name: 'Moves' }).click();
   await expect(page.locator('.move-list li').first()).toHaveText(/^e4/);
 });
+
+test('a finished game goes to the Repertoire app inbox on Google Drive', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('google-token', JSON.stringify({ token: 't', expiresAt: Date.now() + 3_600_000 }));
+    localStorage.setItem('pawnquest-drive', JSON.stringify({ connected: true, sent: [] }));
+  });
+  const uploads: string[] = [];
+  let folders = 0;
+  await page.route('https://www.googleapis.com/**', async (route) => {
+    const req = route.request();
+    if (req.url().includes('/upload/')) {
+      uploads.push(req.postData() ?? '');
+      return route.fulfill({ json: { id: `u${uploads.length}` } });
+    }
+    if (req.method() === 'POST') return route.fulfill({ json: { id: `folder${++folders}` } });
+    return route.fulfill({ json: { files: [] } });
+  });
+  await start(page);
+  await page.getByRole('button', { name: 'Play' }).click();
+  await page.getByRole('button', { name: 'Fight!' }).click();
+  const hint = page.locator('.turn-hint');
+  await expect(hint).toHaveText('Your move', { timeout: 90_000 });
+  await move(page, 'e2', 'e4');
+  await expect(hint).not.toHaveText('Your move');
+  await expect(hint).toHaveText('Your move');
+  await page.getByRole('button', { name: 'Resign' }).click();
+  await page.getByRole('button', { name: 'Yes, resign' }).click();
+  await expect.poll(() => uploads.length).toBe(1);
+  expect(folders).toBe(2);
+  expect(uploads[0]).toContain('"inbox-game"');
+  expect(uploads[0]).toContain('[Source "Pawnquest"]');
+  expect(uploads[0]).toContain('[YourColor "White"]');
+  expect(uploads[0]).toContain('[White "Tester"]');
+  expect(uploads[0]).toMatch(/1\. e4 \S+ 0-1/);
+});

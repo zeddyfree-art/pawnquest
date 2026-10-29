@@ -79,6 +79,7 @@ button { font: inherit; color: inherit; }
 .btn:hover:not(:disabled) { background: #fbe9c7; }
 .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 2px var(--outline), inset 0 2px 0 rgba(74, 42, 23, 0.25); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+a.btn { display: inline-block; text-decoration: none; }
 .btn.primary { background: var(--accent); color: #fff8ec; text-shadow: 1px 1px 0 var(--accent-dark); }
 .btn.primary:hover:not(:disabled) { background: #ea8a4b; }
 .btn.danger { background: var(--bad); color: #fff8ec; }
