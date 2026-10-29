@@ -14,11 +14,13 @@ import { Board, type Arrow } from '../Board';
 import { REGION_BOARD } from '../boards';
 import { Portrait } from '../components';
 import { useNav } from '../nav';
+import { gamePgn, lichessGameUrl } from '../../game/pgn';
 
 export function ReviewScreen() {
   const gameId = useNav((s) => s.reviewId);
   const go = useNav((s) => s.go);
-  const { history, reviews, startGame, lastResult, reviewUnlocks, puzzles } = useSave();
+  const { history, reviews, startGame, lastResult, reviewUnlocks, puzzles, hero } = useSave();
+  const [copied, setCopied] = useState(false);
   const solve = useNav((s) => s.solve);
   const record = history.find((g) => g.id === gameId) ?? (lastResult?.record.id === gameId ? lastResult.record : undefined);
   const c = record && characterById(record.characterId);
@@ -81,6 +83,7 @@ export function ReviewScreen() {
   const counts = labelCounts(review, me, first);
   const moments = review.moments;
   const selected = ply ?? moments[0]?.ply ?? Math.max(0, record.moves.length - 1);
+  const pgn = () => gamePgn(record, hero?.name || 'You', c.name);
   return (
     <div className="review">
       <h1>Game review</h1>
@@ -168,12 +171,36 @@ export function ReviewScreen() {
         })}
       </div>
       <div className="actions">
+        <button
+          className="btn"
+          onClick={() =>
+            navigator.clipboard?.writeText(pgn()).then(
+              () => setCopied(true),
+              () => setCopied(false),
+            )
+          }
+        >
+          {copied ? 'Copied' : 'Copy PGN'}
+        </button>
+        <button className="btn" onClick={() => download(`pawnquest-${record.date.slice(0, 10)}-${c.id}.pgn`, pgn())}>
+          Download PGN
+        </button>
+        <a className="btn" href={lichessGameUrl(record, selected)} target="_blank" rel="noreferrer">
+          Open on Lichess
+        </a>
         <button className="btn" onClick={() => go('map')}>
           Map
         </button>
       </div>
     </div>
   );
+}
+
+function download(name: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/x-chess-pgn' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** The board at the selected move, with the move played and the better one as arrows, and buttons to step through. */

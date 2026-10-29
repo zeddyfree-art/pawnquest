@@ -13,6 +13,7 @@ import { Board, type Arrow } from '../Board';
 import { REGION_BOARD } from '../boards';
 import { Portrait } from '../components';
 import { useNav } from '../nav';
+import { lichessPositionUrl } from '../../game/pgn';
 import { RewardIcon, rewardsName } from './HeroScreen';
 
 type State = 'try' | 'checking' | 'wrong' | 'solved' | 'shown';
@@ -141,6 +142,11 @@ function PuzzleView({ p, n, of, next }: { p: Puzzle; n: number; of: number; next
               <button className="btn primary" onClick={next}>
                 Next puzzle
               </button>
+            )}
+            {finished && (
+              <a className="btn" href={lichessPositionUrl(p.fen)} target="_blank" rel="noreferrer">
+                Analyse on Lichess
+              </a>
             )}
             <button className={`btn${finished && !next ? ' primary' : ''}`} onClick={() => go('profile')}>
               {finished && !next ? 'Done' : 'Puzzle book'}
