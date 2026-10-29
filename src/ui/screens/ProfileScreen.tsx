@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
+import { connectDrive, disconnectDrive, sendGames, useDrive } from '../../store/drive';
 import { characterById } from '../../data/characters';
 import { useNav } from '../nav';
 import { mistakePatterns, phaseAdvice } from '../../review/patterns';
@@ -196,6 +197,7 @@ export function ProfileScreen() {
           <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Motion (ambient effects, screen shake on check)
         </label>
       </div>
+      <RepertoireLink />
       <div className="panel">
         <h2>Your save</h2>
         <p className="muted">Everything is stored on this device only. Download a save file to keep a copy or to move to another device.</p>
@@ -268,6 +270,61 @@ export function ProfileScreen() {
           </a>{' '}
           · version {__APP_COMMIT__}
         </p>
+      </div>
+    </div>
+  );
+}
+
+/** Sends your games to the Repertoire app through your Google Drive. */
+function RepertoireLink() {
+  const { connected, status, error, waiting } = useDrive();
+  const [busy, setBusy] = useState(false);
+  const connect = () => {
+    setBusy(true);
+    void connectDrive().finally(() => setBusy(false));
+  };
+  return (
+    <div className="panel">
+      <h2>Repertoire app</h2>
+      <p className="muted">
+        Send your games to the{' '}
+        <a href="https://zeddyfree-art.github.io/chess/" target="_blank" rel="noreferrer">
+          Repertoire app
+        </a>{' '}
+        through your Google Drive: each finished game goes to its Inbox folder and shows up there at the next sync, tagged Pawnquest. The app
+        only sees files it made itself, nothing else in your Drive.
+      </p>
+      {connected && (
+        <p role="status">
+          {status === 'sending' && `Sending… ${waiting} to go.`}
+          {status === 'done' && 'All your games are sent.'}
+          {status === 'needs-auth' && `${waiting} ${waiting === 1 ? 'game is' : 'games are'} waiting: sign in to Google again to send them.`}
+          {status === 'error' && `Could not send: ${error}`}
+        </p>
+      )}
+      {!connected && error && <p role="status">{error}</p>}
+      <div className="actions left">
+        {!connected ? (
+          <button className="btn primary" onClick={connect} disabled={busy}>
+            Connect Google Drive
+          </button>
+        ) : (
+          <>
+            {status === 'needs-auth' && (
+              <button className="btn primary" onClick={connect} disabled={busy}>
+                Sign in again
+              </button>
+            )}
+            {status === 'error' && (
+              <button className="btn" onClick={() => void sendGames()}>
+                Try again
+              </button>
+            )}
+            <button className="btn" onClick={disconnectDrive}>
+              Stop sending
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
