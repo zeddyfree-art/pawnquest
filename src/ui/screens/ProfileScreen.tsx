@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
-import { connectDrive, disconnectDrive, sendGames, useDrive } from '../../store/drive';
+import { connectDrive, disconnectDrive, syncNow, useDrive } from '../../store/drive';
 import { characterById } from '../../data/characters';
 import { useNav } from '../nav';
 import { mistakePatterns, phaseAdvice } from '../../review/patterns';
@@ -32,6 +32,7 @@ function RatingChart({ points }: { points: number[] }) {
 
 export function ProfileScreen() {
   const { rating, peak, xp, history, reviews, settings, setSettings, importSave, resetAll, puzzles, puzzleLog } = useSave();
+  const driveOn = useDrive((s) => s.connected);
   const solve = useNav((s) => s.solve);
   // Unsolved puzzles, newest first; then the solved ones to go over again.
   const open = puzzles.filter((p) => !puzzleLog[p.id]?.solved).reverse();
@@ -197,10 +198,14 @@ export function ProfileScreen() {
           <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Motion (ambient effects, screen shake on check)
         </label>
       </div>
-      <RepertoireLink />
+      <DrivePanel />
       <div className="panel">
         <h2>Your save</h2>
-        <p className="muted">Everything is stored on this device only. Download a save file to keep a copy or to move to another device.</p>
+        <p className="muted">
+          {driveOn
+            ? 'Stored on this device and synced with your Google Drive. Loading a save file or starting over replaces your progress on all your devices.'
+            : 'Everything is stored on this device only. Download a save file to keep a copy, or connect Google Drive above to play on more devices.'}
+        </p>
         <div className="actions left">
           <button className="btn" onClick={download}>
             Download save
@@ -219,7 +224,7 @@ export function ProfileScreen() {
                   setMsg('Started over at 600.');
                 }}
               >
-                Yes, erase everything
+                {driveOn ? 'Yes, erase everything on all devices' : 'Yes, erase everything'}
               </button>
               <button className="btn" onClick={() => setConfirmReset(false)}>
                 Cancel
@@ -275,9 +280,9 @@ export function ProfileScreen() {
   );
 }
 
-/** Sends your games to the Repertoire app through your Google Drive. */
-function RepertoireLink() {
-  const { connected, status, error, waiting } = useDrive();
+/** Google Drive: one progress on all your devices, and your games in the Repertoire app. */
+function DrivePanel() {
+  const { connected, status, error, lastSyncAt } = useDrive();
   const [busy, setBusy] = useState(false);
   const connect = () => {
     setBusy(true);
@@ -285,21 +290,21 @@ function RepertoireLink() {
   };
   return (
     <div className="panel">
-      <h2>Repertoire app</h2>
+      <h2>Google Drive</h2>
       <p className="muted">
-        Send your games to the{' '}
+        Sign in with the same Google account on your phone and your computer to play on with one progress everywhere: games, rating, XP, your hero and
+        your puzzle book are merged and kept in sync. Your games also go to the{' '}
         <a href="https://zeddyfree-art.github.io/chess/" target="_blank" rel="noreferrer">
           Repertoire app
-        </a>{' '}
-        through your Google Drive: each finished game goes to its Inbox folder and shows up there at the next sync, tagged Pawnquest. The app
-        only sees files it made itself, nothing else in your Drive.
+        </a>
+        , tagged Pawnquest. Pawnquest only sees the files it made itself, nothing else in your Drive.
       </p>
       {connected && (
         <p role="status">
-          {status === 'sending' && `Sending… ${waiting} to go.`}
-          {status === 'done' && 'All your games are sent.'}
-          {status === 'needs-auth' && `${waiting} ${waiting === 1 ? 'game is' : 'games are'} waiting: sign in to Google again to send them.`}
-          {status === 'error' && `Could not send: ${error}`}
+          {status === 'syncing' && 'Syncing…'}
+          {status === 'synced' && (lastSyncAt ? `Synced at ${new Date(lastSyncAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.` : 'Connected.')}
+          {status === 'needs-auth' && 'Google asks you to sign in again (once an hour) before syncing goes on.'}
+          {status === 'error' && `Could not sync: ${error}`}
         </p>
       )}
       {!connected && error && <p role="status">{error}</p>}
@@ -310,18 +315,17 @@ function RepertoireLink() {
           </button>
         ) : (
           <>
-            {status === 'needs-auth' && (
+            {status === 'needs-auth' ? (
               <button className="btn primary" onClick={connect} disabled={busy}>
                 Sign in again
               </button>
-            )}
-            {status === 'error' && (
-              <button className="btn" onClick={() => void sendGames()}>
-                Try again
+            ) : (
+              <button className="btn" onClick={() => void syncNow()} disabled={status === 'syncing'}>
+                Sync now
               </button>
             )}
             <button className="btn" onClick={disconnectDrive}>
-              Stop sending
+              Disconnect
             </button>
           </>
         )}

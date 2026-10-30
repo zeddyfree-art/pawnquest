@@ -19,6 +19,8 @@ import { PlayDock } from './ui/PlayDock';
 import { characterById } from './data/characters';
 import { refreshMusic, setTrack } from './ui/music';
 import { startAutoReview } from './review/reviewer';
+import { initDrive } from './store/drive';
+import { SyncChip } from './ui/SyncChip';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -39,7 +41,10 @@ export function App() {
 
   const updateAvailable = useUpdate((s) => s.available);
   useEffect(() => {
-    void loadSave().then(startAutoReview);
+    void loadSave().then(() => {
+      startAutoReview();
+      initDrive();
+    });
     initUpdateCheck();
   }, []);
 
@@ -76,6 +81,7 @@ export function App() {
             <span className="hud-level" title={`${xp} XP`}>
               LV {lvl.level}
             </span>
+            <SyncChip />
           </span>
         </header>
       )}

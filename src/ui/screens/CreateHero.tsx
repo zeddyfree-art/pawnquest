@@ -1,6 +1,7 @@
 // Making your hero: a name, a class (its starting outfit and title) and a look. Shown before the first game, and
 // again from the Hero screen to change the look. Some hair styles and colours unlock at higher levels.
 import { useState } from 'react';
+import { connectDrive } from '../../store/drive';
 import { CLASSES, EYES, HAIR_COLORS, HAIR_STYLES, SKINS, classById, newHero, type Hero } from '../../data/gear';
 import { levelFor } from '../../game/progress';
 import { useSave } from '../../store/save';
@@ -140,6 +141,14 @@ export function CreateHero() {
           {existing ? 'Save' : 'Begin your quest'}
         </button>
       </div>
+      {!existing && (
+        <p className="center muted">
+          Already playing on another device?{' '}
+          <button className="linkish" onClick={() => void connectDrive()}>
+            Continue with Google
+          </button>
+        </p>
+      )}
     </div>
   );
 }
