@@ -66,6 +66,12 @@ export interface SaveData {
   /** The puzzle book: better moves from reviews, and how each attempt went. */
   puzzles: Puzzle[];
   puzzleLog: Record<string, PuzzleTry>;
+  /** When this save was started over or loaded from a file (it then replaces older saves on other devices). */
+  epoch?: string;
+  /** When the hero was last changed (the newest one wins when devices sync). */
+  heroAt?: string;
+  /** Games already sent to the Repertoire app (by id). */
+  sent?: string[];
 }
 
 export const NEW_SAVE: SaveData = {
@@ -137,7 +143,7 @@ function addPuzzles(list: Puzzle[], add: Puzzle[], log: Record<string, PuzzleTry
 const db = typeof indexedDB !== 'undefined' ? createStore('pawnquest', 'save') : undefined;
 const KEY = 'save-v1';
 
-const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews, hero: s.hero, puzzles: s.puzzles, puzzleLog: s.puzzleLog });
+const pickSave = (s: Store): SaveData => ({ version: 1, rating: s.rating, peak: s.peak, xp: s.xp, history: s.history, active: s.active, settings: s.settings, reviews: s.reviews, hero: s.hero, puzzles: s.puzzles, puzzleLog: s.puzzleLog, epoch: s.epoch, heroAt: s.heroAt, sent: s.sent });
 
 /** What the unlocks are computed from. */
 export const progressOf = (s: Pick<SaveData, 'history' | 'peak'> & { puzzleLog?: Record<string, PuzzleTry> }): Progress => ({
@@ -266,23 +272,24 @@ export const useSave = create<Store>()((setState, getState) => ({
   },
 
   setHero(hero) {
-    setState({ hero });
+    setState({ hero, heroAt: new Date().toISOString() });
   },
 
   equip(slot, id) {
     const h = getState().hero;
     if (!h) return;
-    if (slot === 'pet') setState({ hero: { ...h, pet: id as Hero['pet'] } });
-    else setState({ hero: { ...h, equip: { ...h.equip, [slot]: id } } });
+    const heroAt = new Date().toISOString();
+    if (slot === 'pet') setState({ hero: { ...h, pet: id as Hero['pet'] }, heroAt });
+    else setState({ hero: { ...h, equip: { ...h.equip, [slot]: id } }, heroAt });
   },
 
   importSave(json) {
     const data = parseSave(json);
-    setState({ ...data, lastResult: null });
+    setState({ ...data, lastResult: null, epoch: new Date().toISOString() });
   },
 
   resetAll() {
-    setState({ ...NEW_SAVE, lastResult: null });
+    setState({ ...NEW_SAVE, lastResult: null, epoch: new Date().toISOString(), heroAt: undefined });
   },
 }));
 
