@@ -25,10 +25,12 @@ export function CreateHero() {
   const [look, setLook] = useState<HeroLook>(existing?.look ?? { skin: SKINS[2], hair: HAIR_COLORS[1].color, hairStyle: 'messy', eyes: EYES[0] });
   const patch = (p: Partial<HeroLook>) => setLook({ ...look, ...p });
 
-  // While making a new hero the class shows its starting outfit; when editing, the hero keeps what they wear.
-  const preview: Hero = existing ? { ...existing, cls, look, name } : newHero(name, cls, look);
+  // The class comes with its starting outfit. When editing, the hero keeps what they wear unless they pick another
+  // class: then that class's clothes and weapon go on (everything earned stays in the wardrobe).
+  const edited = (h: Hero): Hero => ({ ...h, name: name.trim() || 'Hero', cls, look, equip: cls === h.cls ? h.equip : { ...h.equip, ...classById(cls).start } });
+  const preview: Hero = existing ? edited(existing) : newHero(name, cls, look);
   const save = () => {
-    setHero(existing ? { ...existing, name: name.trim() || 'Hero', cls, look } : newHero(name, cls, look));
+    setHero(existing ? edited(existing) : newHero(name, cls, look));
     go(existing ? 'hero' : 'map');
   };
 
@@ -37,7 +39,7 @@ export function CreateHero() {
       <h1>{existing ? 'Change your look' : 'Who goes on this quest?'}</h1>
       <div className="create-preview panel">
         <HeroSprite hero={preview} size={128} />
-        <b className="pixel">{name.trim() || 'Hero'}</b>
+        <b className="pixel">{preview.name}</b>
         <small>{classById(cls).name}</small>
       </div>
 
@@ -58,6 +60,7 @@ export function CreateHero() {
               </button>
             ))}
           </div>
+          {existing && <p className="small muted">Another class puts on its clothes and weapon. Everything you earned stays in the wardrobe.</p>}
           {existing && <p className="muted small">Your class is your title. You keep everything you have won.</p>}
         </fieldset>
 

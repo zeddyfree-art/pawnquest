@@ -598,12 +598,6 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   if (!hides) drawBackHair(cv, look);
   drawLegs(cv, look, outfit);
   drawBody(cv, look, outfit, true);
-  if (outfit.main) drawMain(cv, outfit.main);
-  if (outfit.off) drawOff(cv, outfit.off);
-  drawHands(cv, look.skin, outfit);
-  // The lute and the shield sit in front of the hand that holds them.
-  if (outfit.main?.kind === 'lute') drawMain(cv, outfit.main);
-  if (outfit.off && ['shield', 'buckler', 'book'].includes(outfit.off.kind)) drawOff(cv, outfit.off);
   cv.part(NECK, tone(look.skin, -0.12));
   cv.part(EARS, look.skin);
   cv.part(HEAD, look.skin);
@@ -613,6 +607,13 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   hairTexture(cv, look);
   if (outfit.face) drawFaceGear(cv, outfit.face);
   if (outfit.head) drawHeadGear(cv, outfit.head);
+  // What the hands hold comes last, in front of the head and hat (a staff reaches up past them), and the hands close
+  // over the grip. The lute and the shield sit in front of the hand that holds them.
+  if (outfit.main) drawMain(cv, outfit.main);
+  if (outfit.off) drawOff(cv, outfit.off);
+  drawHands(cv, look.skin, outfit);
+  if (outfit.main?.kind === 'lute') drawMain(cv, outfit.main);
+  if (outfit.off && ['shield', 'buckler', 'book'].includes(outfit.off.kind)) drawOff(cv, outfit.off);
   return cv.px;
 }
 
