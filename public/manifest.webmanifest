@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Pawnquest — chess RPG",
+  "short_name": "Pawnquest",
+  "description": "Climb a ladder of pixel-art RPG characters, each a human-like chess bot at a fixed rating. Free, open source, runs on your device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#cfe7b5",
+  "theme_color": "#b07a4b",
+  "categories": ["games", "education"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

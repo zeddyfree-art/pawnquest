@@ -68,7 +68,20 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
   whenever no game is being played; opening one jumps the queue. The puzzle book shows the opponent's last move,
   and after the answer the position after it, with the engine's line.
 
-Next: (once everything is well tested) offline play as an installable app. See [docs/roadmap.md](docs/roadmap.md).
+## Install as an app
+
+Pawnquest is a Progressive Web App. In Chrome or Edge (computer or Android) use **Install Pawnquest** on the
+Profile screen, or the install icon in the address bar; on an iPhone or iPad tap **Share → Add to Home Screen**; in
+Safari on a Mac **File → Add to Dock**. Firefox on a computer cannot install web apps.
+
+The installed app is the same site with the same progress, in its own window. After the first visit it also starts
+without a network: the map, your hero, the puzzle book and fights against every rival whose Maia model was
+downloaded before. Reviews (Stockfish) and the region music work offline once they have been used. Google Drive
+syncing and the Lichess links need a connection. A service worker (`pwa/sw.js`, built by a small Vite plugin) keeps
+the files; pages come from the network first, so updates arrive by themselves. The icons are drawn by
+`scripts/make-icons.mjs`.
+
+See [docs/roadmap.md](docs/roadmap.md) for what is next.
 
 ## Develop
 
