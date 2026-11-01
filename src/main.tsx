@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client';
+import { initInstall } from './install';
 import '@fontsource/pixelify-sans/500.css';
 import '@fontsource/pixelify-sans/700.css';
 import '@fontsource/nunito/400.css';
@@ -8,6 +9,9 @@ import '@lichess-org/chessground/assets/chessground.base.css';
 import './styles.css';
 import { App } from './App';
 import { boardsCss } from './ui/boards';
+
+// Before rendering, so the browser's "can be installed" event is not missed.
+initInstall();
 
 const style = document.createElement('style');
 style.textContent = boardsCss();

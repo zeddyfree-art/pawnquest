@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
 import { connectDrive, disconnectDrive, syncNow, useDrive } from '../../store/drive';
+import { installApp, useInstall } from '../../install';
 import { characterById } from '../../data/characters';
 import { useNav } from '../nav';
 import { mistakePatterns, phaseAdvice } from '../../review/patterns';
@@ -198,6 +199,7 @@ export function ProfileScreen() {
           <input type="checkbox" checked={settings.motion} onChange={(e) => setSettings({ motion: e.target.checked })} /> Motion (ambient effects, screen shake on check)
         </label>
       </div>
+      <InstallPanel />
       <DrivePanel />
       <div className="panel">
         <h2>Your save</h2>
@@ -269,6 +271,10 @@ export function ProfileScreen() {
           , used with permission. Thank you!
         </p>
         <p className="muted">Ratings are Pawnquest’s own scale and are not the same as Lichess or Chess.com ratings.</p>
+        <p className="muted">
+          Install it as an app from your browser (on an iPhone or iPad: Share → Add to Home Screen). It then starts without a network too;
+          only Google Drive syncing and Lichess need one.
+        </p>
         <p className="muted small">
           <a href="https://github.com/zeddyfree-art/pawnquest" target="_blank" rel="noreferrer">
             Source code
@@ -330,6 +336,42 @@ function DrivePanel() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Installing Pawnquest as an app: its own icon and window, and a start without a network. */
+function InstallPanel() {
+  const state = useInstall();
+  const [done, setDone] = useState(false);
+  return (
+    <div className="panel">
+      <h2>Install the app</h2>
+      {state === 'installed' || done ? (
+        <p>✓ Installed: Pawnquest has its own icon and window.</p>
+      ) : state === 'available' ? (
+        <div className="actions left">
+          <button className="btn primary" onClick={() => void installApp().then(setDone)}>
+            Install Pawnquest
+          </button>
+        </div>
+      ) : state === 'ios' ? (
+        <p>
+          On an iPhone or iPad: tap <b>Share</b> (the square with an arrow) and then <b>Add to Home Screen</b>. In Safari on a Mac:{' '}
+          <b>File → Add to Dock</b>.
+        </p>
+      ) : (
+        <p>
+          Use your browser’s install option: in Chrome and Edge the install icon at the right of the address bar (or the menu ⋮ →{' '}
+          <b>Cast, save and share → Install page as app</b>); on Android ⋮ → <b>Add to Home screen</b> or <b>Install app</b>. Firefox on a
+          computer cannot install web apps.
+        </p>
+      )}
+      <p className="muted small">
+        The app is this same site, with the same progress on this device. Once opened, it starts without a network: the map, your hero,
+        the puzzle book and fights against every rival whose brain was downloaded before. Reviews and music work offline once used.
+        Syncing with Google Drive and Lichess links need a connection. Updates arrive by themselves.
+      </p>
     </div>
   );
 }
