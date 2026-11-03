@@ -1,16 +1,24 @@
 // Calibration results (tools/calibrate): per character its measured rating, and the strength knobs: the Elo
 // given to Maia, a factor on its sampling temperature and its share of random moves. Characters not listed use their starting values.
 // Filled in from a calibration run (see tools/calibrate/README.md).
+import type { ModelId, Temperament } from '../config';
+
 export interface Knobs {
   /** The measured rating (replaces the ladder step as the character's rating). */
   rating?: number;
   engineElo?: number;
   tempScale?: number;
   blunderPct?: number;
+  /** Another temperament or network than the faction and rank give (to move a character's strength on the path). */
+  temperament?: Temperament;
+  model?: ModelId;
 }
 
 /** Measured in October 2026: 80 games per pair against the same rank and the ranks next to it (9360 games), Elo fit
- * anchored on the ladder's mean. Zed and the Jester play with a human temperament (their openings make them wild). */
+ * anchored on the ladder's mean. Zed and the Jester play with a human temperament (their openings make them wild).
+ * November 2026, so the path runs from weak to strong across the village and the castle (games of the four
+ * re-played, 80 per pair, on the same scale): Grunwald and Captain Holt keep their steady style with a warmer
+ * temperature, Sir Cedric plays with what was Holt's engine (steady, 5M at 1200). */
 export const CALIBRATION: Record<string, Knobs> = {
   "straw-sam": { rating: 557 },
   pip: { rating: 622 },
@@ -21,12 +29,12 @@ export const CALIBRATION: Record<string, Knobs> = {
   nell: { rating: 1174 },
   zed: { rating: 1203 },
   "squire-aldric": { rating: 1180 },
-  grunwald: { rating: 1355 },
+  grunwald: { rating: 1243, tempScale: 1.6 },
   morwen: { rating: 1282 },
   bram: { rating: 1264 },
-  "captain-holt": { rating: 1425 },
-  jester: { rating: 1377 },
-  "sir-cedric": { rating: 1353 },
+  "captain-holt": { rating: 1322, tempScale: 1.7 },
+  jester: { rating: 1404 },
+  "sir-cedric": { rating: 1382, engineElo: 1200, temperament: "steady", model: "5m" },
   "bishop-anselm": { rating: 1526 },
   vex: { rating: 1532 },
   "royal-champion": { rating: 1486 },
