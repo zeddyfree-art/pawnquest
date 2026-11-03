@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { connectDrive } from '../../store/drive';
 import { CLASSES, EYES, HAIR_COLORS, HAIR_STYLES, SKINS, classById, newHero, type Hero } from '../../data/gear';
 import { levelFor } from '../../game/progress';
+import { rankOf } from '../../data/ranks';
 import { useSave } from '../../store/save';
 import { ALL_SETS, pieceDataUrl, STARTING_SETS } from '../pieces';
 import { HeroSprite } from '../components';
@@ -15,6 +16,7 @@ const STYLE_LABEL: Record<string, string> = { short: 'Short', messy: 'Messy', lo
 export function CreateHero() {
   const existing = useSave((s) => s.hero);
   const xp = useSave((s) => s.xp);
+  const peak = useSave((s) => s.peak);
   const setHero = useSave((s) => s.setHero);
   const pieceSet = useSave((s) => s.settings.pieceSet);
   const setSettings = useSave((s) => s.setSettings);
@@ -40,7 +42,7 @@ export function CreateHero() {
       <div className="create-preview panel">
         <HeroSprite hero={preview} size={128} />
         <b className="pixel">{preview.name}</b>
-        <small>{classById(cls).name}</small>
+        <small>{rankOf(cls, peak).name}</small>
       </div>
 
       <div className="panel create-form">

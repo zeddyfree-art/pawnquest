@@ -6,6 +6,7 @@ import { ITEMS, PETS, SLOT_LABEL, classById, itemById, petById } from '../../dat
 import { levelFor } from '../../game/progress';
 import { QUEST_GROUPS, QUESTS, regionsVisited, unlocks, type Reward } from '../../game/unlocks';
 import { TITLES } from '../../data/titles';
+import { rankOf, rankAt } from '../../data/ranks';
 import { gamesWithPet, nextGrowth, owlScholar, petStage } from '../../game/pets';
 import { OWL_STUDY, PET_GROWTH } from '../../config';
 import { EFFECTS, effectFor } from '../victory';
@@ -23,6 +24,7 @@ export function rewardName(r: Reward): string {
   if (r.kind === 'pieces') return `${ALL_SETS.find((p) => p.id === r.id)?.name} pieces`;
   if (r.kind === 'item') return itemById(r.id)?.name ?? r.id;
   if (r.kind === 'title') return `title “${TITLES[r.id] ?? r.id}”`;
+  if (r.kind === 'rank') return `rank “${rankAt(useSave.getState().hero?.cls ?? 'squire', r.at)}”`;
   return petById(r.id)?.name ?? r.id;
 }
 export const rewardsName = (rs: Reward[]) => rs.map(rewardName).join(' + ');
@@ -34,6 +36,7 @@ export function RewardIcon({ r, size = 36 }: { r: Reward; size?: number }) {
     return it ? <GearIcon art={it.art} size={size} /> : null;
   }
   if (r.kind === 'title') return <span className="title-icon" style={{ width: size, height: size }} aria-hidden="true">❧</span>;
+  if (r.kind === 'rank') return <span className="title-icon rank-icon" style={{ width: size, height: size }} aria-hidden="true">⚜</span>;
   if (r.kind === 'pieces') return <img className="gear-icon" src={pieceDataUrl('knight', 'black', r.id)} alt="" width={size} height={size} />;
   const t = BOARD_THEMES.find((b) => b.id === r.id)!;
   return <img className="gear-icon board-icon" src={boardDataUrl(t)} alt="" width={size} height={size} />;
@@ -62,7 +65,8 @@ export function HeroScreen() {
   const u = unlocks(progress);
   if (!hero) return null;
   const lvl = levelFor(xp);
-  const questFor = (r: Reward) => QUESTS.find((q) => q.rewards.some((x) => x.kind === r.kind && x.id === r.id));
+  const rank = rankOf(hero.cls, s.peak);
+  const questFor = (r: Reward) => QUESTS.find((q) => q.rewards.some((x) => JSON.stringify(x) === JSON.stringify(r)));
   const setTitle = (title: string | null) => s.setHero({ ...hero, title });
   const visited = regionsVisited(s.history);
   const scholar = owlScholar(s.history);
@@ -75,9 +79,10 @@ export function HeroScreen() {
         <div className="hero-card-info">
           <h1>{hero.name}</h1>
           {hero.title && TITLES[hero.title] && <p className="hero-title">{TITLES[hero.title]}</p>}
-          <p className="muted">
-            {classById(hero.cls).name} · Level {lvl.level}
+          <p className="hero-rank">
+            <b>{rank.name}</b> · Level {lvl.level}
           </p>
+          <p className="muted small">{rank.next ? `${rank.next.name} at a rating of ${rank.next.at}` : `The highest ${classById(hero.cls).name.toLowerCase()} rank`}</p>
           <p className="muted small">
             {ITEMS.filter((i) => i.from && u.items.has(i.id)).length} of {ITEMS.filter((i) => i.from).length} trophies · {u.quests.size} quests done
           </p>

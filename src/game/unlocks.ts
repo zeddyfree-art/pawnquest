@@ -15,7 +15,9 @@ export type Reward =
   | { kind: 'pieces'; id: PieceSetId }
   | { kind: 'pet'; id: PetKind }
   | { kind: 'item'; id: string }
-  | { kind: 'title'; id: string };
+  | { kind: 'title'; id: string }
+  /** A new rank: the hero's class title at this rating (data/ranks.ts). */
+  | { kind: 'rank'; at: number };
 
 export type QuestGroup = 'habits' | 'journey' | 'study' | 'conquest' | 'sets';
 export const QUEST_GROUPS: { id: QuestGroup; name: string; blurb: string }[] = [
@@ -144,11 +146,15 @@ export const QUESTS: Quest[] = [
   { group: 'conquest', id: 'wins-10', title: 'Seasoned', text: 'Win 10 games.', rewards: [{ kind: 'pieces', id: 'ivory' }], progress: (p) => count(wins(p.history).length, 10) },
   { group: 'conquest', id: 'wins-25', title: 'Veteran', text: 'Win 25 games.', rewards: [{ kind: 'pieces', id: 'royal' }], progress: (p) => count(wins(p.history).length, 25) },
   { group: 'conquest', id: 'long-win', title: 'Endgame grinder', text: 'Win a game of 60 moves or more.', rewards: [{ kind: 'pieces', id: 'frost' }], progress: (p) => count(wins(p.history).filter((g) => ownMoveCount(g) >= 60).length, 1) },
-  { group: 'conquest', id: 'rating-800', title: 'On the road', text: 'Reach a rating of 800.', rewards: [{ kind: 'pet', id: 'dog' }], progress: (p) => count(p.peak >= 800 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-800', title: 'On the road', text: 'Reach a rating of 800.', rewards: [{ kind: 'pet', id: 'dog' }, { kind: 'rank', at: 800 }], progress: (p) => count(p.peak >= 800 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-1000', title: 'Half the realm behind you', text: 'Reach a rating of 1000.', rewards: [{ kind: 'rank', at: 1000 }], progress: (p) => count(p.peak >= 1000 ? 1 : 0, 1) },
   { group: 'conquest', id: 'gold-crown', title: 'Golden', text: 'Earn a gold crown (5 wins against one opponent).', rewards: [{ kind: 'pieces', id: 'ember' }], progress: (p) => count(goldCrowns(p.history), 1) },
-  { group: 'conquest', id: 'rating-1200', title: 'Village hero', text: 'Reach a rating of 1200.', rewards: [{ kind: 'pieces', id: 'jade' }], progress: (p) => count(p.peak >= 1200 ? 1 : 0, 1) },
-  { group: 'conquest', id: 'rating-1600', title: 'Knight of the realm', text: 'Reach a rating of 1600.', rewards: [{ kind: 'board', id: 'marble' }], progress: (p) => count(p.peak >= 1600 ? 1 : 0, 1) },
-  { group: 'conquest', id: 'rating-2000', title: 'Dragon friend', text: 'Reach a rating of 2000.', rewards: [{ kind: 'pet', id: 'dragon' }], progress: (p) => count(p.peak >= 2000 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-1200', title: 'Village hero', text: 'Reach a rating of 1200.', rewards: [{ kind: 'pieces', id: 'jade' }, { kind: 'rank', at: 1200 }], progress: (p) => count(p.peak >= 1200 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-1400', title: 'At the castle gates', text: 'Reach a rating of 1400.', rewards: [{ kind: 'rank', at: 1400 }], progress: (p) => count(p.peak >= 1400 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-1600', title: 'Knight of the realm', text: 'Reach a rating of 1600.', rewards: [{ kind: 'board', id: 'marble' }, { kind: 'rank', at: 1600 }], progress: (p) => count(p.peak >= 1600 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-1800', title: 'Beyond the walls', text: 'Reach a rating of 1800.', rewards: [{ kind: 'rank', at: 1800 }], progress: (p) => count(p.peak >= 1800 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-2000', title: 'Dragon friend', text: 'Reach a rating of 2000.', rewards: [{ kind: 'pet', id: 'dragon' }, { kind: 'rank', at: 2000 }], progress: (p) => count(p.peak >= 2000 ? 1 : 0, 1) },
+  { group: 'conquest', id: 'rating-2150', title: 'Peerless', text: 'Reach a rating of 2150, above the Necromancer King.', rewards: [{ kind: 'rank', at: 2150 }], progress: (p) => count(p.peak >= 2150 ? 1 : 0, 1) },
   { group: 'conquest', id: 'underworld', title: 'Into the dark', text: 'Beat anyone in the Underworld.', rewards: [{ kind: 'board', id: 'obsidian' }], progress: (p) => count(wins(p.history).filter((g) => characterById(g.characterId)?.world === 'underworld').length, 1) },
   { group: 'conquest', id: 'boss', title: 'The crown falls', text: 'Beat the Necromancer King.', rewards: [{ kind: 'pet', id: 'ghost' }], progress: (p) => count(wins(p.history).filter((g) => g.characterId === 'necromancer-king').length, 1) },
   { group: 'conquest', id: 'fire-and-ice', title: 'Fire and ice', text: 'Beat both Ignis the Dragon Tamer and the Frost Giant once, or lose to them 25 times in all.', rewards: [{ kind: 'pieces', id: 'fireice' }], progress: (p) => fireAndIce(p.history) },
@@ -271,7 +277,7 @@ export function unlocks(p: Progress): Unlocks {
       else if (r.kind === 'pieces') u.pieces.add(r.id);
       else if (r.kind === 'pet') u.pets.add(r.id);
       else if (r.kind === 'item') u.items.add(r.id);
-      else u.titles.add(r.id);
+      else if (r.kind === 'title') u.titles.add(r.id);
     }
   }
   return u;

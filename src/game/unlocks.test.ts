@@ -35,7 +35,7 @@ describe('unlocks', () => {
     for (const cls of CLASSES) for (const [slot, id] of Object.entries(cls.start)) expect(ITEMS.find((i) => i.id === id)?.art.slot).toBe(slot);
   });
   it('every board, piece set and pet can be earned (or is there from the start)', () => {
-    const rewards = QUESTS.flatMap((q) => q.rewards.map((r) => `${r.kind}:${r.id}`));
+    const rewards = QUESTS.flatMap((q) => q.rewards.map((r) => `${r.kind}:${'id' in r ? r.id : r.at}`));
     expect(new Set(rewards).size).toBe(rewards.length);
     for (const b of BOARD_THEMES) if (!STARTING_BOARDS.includes(b.id)) expect(rewards, b.id).toContain(`board:${b.id}`);
     for (const p of ALL_SETS) if (!STARTING_SETS.includes(p.id)) expect(rewards, p.id).toContain(`pieces:${p.id}`);
@@ -179,5 +179,17 @@ describe('pets grow', () => {
     const wins5 = Array.from({ length: 5 }, (_, i) => win(village[i % village.length]));
     expect(unlocks(progress(wins5.slice(1))).boards.has('px-autumn-maple')).toBe(false);
     expect(unlocks(progress(wins5)).boards.has('px-autumn-maple')).toBe(true);
+  });
+});
+
+describe('ranks', () => {
+  it('every rank step has a milestone quest, and every class a name per step', async () => {
+    const { RANK_STEPS, RANKS, rankOf } = await import('../data/ranks');
+    const at = QUESTS.flatMap((q) => q.rewards.flatMap((r) => (r.kind === 'rank' ? [r.at] : [])));
+    expect(at.sort((a, b) => a - b)).toEqual(RANK_STEPS.slice(1));
+    for (const names of Object.values(RANKS)) expect(names).toHaveLength(RANK_STEPS.length);
+    expect(rankOf('squire', 600).name).toBe('Squire');
+    expect(rankOf('squire', 1000)).toEqual({ name: 'Cavalier', next: { name: 'Knight', at: 1200 } });
+    expect(rankOf('bard', 2200)).toEqual({ name: 'Bard of the Endless Song', next: null });
   });
 });
