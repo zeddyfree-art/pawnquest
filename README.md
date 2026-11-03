@@ -68,6 +68,11 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
   whenever no game is being played; opening one jumps the queue. The puzzle book shows the opponent's last move,
   and after the answer the position after it, with the engine's line.
 
+- **Ranks** (v0.9): your class title grows with your best rating, at 800, 1000, 1200, 1400, 1600, 1800, 2000
+  and 2150: a Squire becomes Man-at-Arms, Cavalier, Knight … up to Kingsguard Eternal; an Apprentice ends as
+  Arch-Sorcerer of the Throne, a Ranger as Warden of the Last Road, a Bard as Bard of the Endless Song
+  (`src/data/ranks.ts`). Each step is a milestone quest.
+
 ## Install as an app
 
 Pawnquest is a Progressive Web App. In Chrome or Edge (computer or Android) use **Install Pawnquest** on the
