@@ -3,6 +3,7 @@ import { levelFor } from '../../game/progress';
 import { exportSave, useSave } from '../../store/save';
 import { connectDrive, disconnectDrive, syncNow, useDrive } from '../../store/drive';
 import { installApp, useInstall } from '../../install';
+import { APP_VERSION, CHANGELOG, feedbackHref } from '../../changelog';
 import { characterById } from '../../data/characters';
 import { useNav } from '../nav';
 import { mistakePatterns, phaseAdvice } from '../../review/patterns';
@@ -275,11 +276,29 @@ export function ProfileScreen() {
           Install it as an app from your browser (on an iPhone or iPad: Share → Add to Home Screen). It then starts without a network too;
           only Google Drive syncing and Lichess need one.
         </p>
+        <p>
+          <a className="btn primary" href={feedbackHref()}>
+            Send feedback
+          </a>
+        </p>
+        <details className="news-all">
+          <summary>What’s new</summary>
+          {CHANGELOG.map((c) => (
+            <div key={c.version}>
+              <b>Version {c.version}</b>
+              <ul>
+                {c.items.map((it) => (
+                  <li key={it}>{it}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </details>
         <p className="muted small">
           <a href="https://github.com/zeddyfree-art/pawnquest" target="_blank" rel="noreferrer">
             Source code
           </a>{' '}
-          · version {__APP_COMMIT__}
+          · version {APP_VERSION} ({__APP_COMMIT__})
         </p>
       </div>
     </div>

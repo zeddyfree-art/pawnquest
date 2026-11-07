@@ -5,10 +5,12 @@ import { readdirSync, readFileSync } from 'node:fs';
 // `base: './'` keeps every asset path relative, so the build works on GitHub Pages
 // (https://<user>.github.io/pawnquest/) and from any other folder.
 const commit = (process.env.GITHUB_SHA ?? '').slice(0, 7) || 'local';
+// The version players see ("What's new", About): package.json's version, raised by hand with each notable release.
+const version = (JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string }).version;
 
 export default defineConfig({
   base: './',
-  define: { __APP_COMMIT__: JSON.stringify(commit) },
+  define: { __APP_COMMIT__: JSON.stringify(commit), __APP_VERSION__: JSON.stringify(version) },
   plugins: [
     react(),
     // version.json lets an open tab notice that a newer version was published (see src/version.ts).

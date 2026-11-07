@@ -21,6 +21,8 @@ import { refreshMusic, setTrack } from './ui/music';
 import { startAutoReview } from './review/reviewer';
 import { initDrive } from './store/drive';
 import { SyncChip } from './ui/SyncChip';
+import { WhatsNew } from './ui/WhatsNew';
+import { markVersionSeen } from './changelog';
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: 'map', label: 'Map' },
@@ -55,7 +57,9 @@ export function App() {
 
   if (!loaded) return <div className="splash pixel">Pawnquest</div>;
   applyPieceSet(pieceSet);
-  if (!hasHero)
+  if (!hasHero) {
+    // Someone new has nothing older to compare with: no "What's new" once they have made their hero.
+    markVersionSeen();
     return (
       <div className="app screen-create">
         <main className="content">
@@ -63,6 +67,7 @@ export function App() {
         </main>
       </div>
     );
+  }
   const lvl = levelFor(xp);
   const inFight = screen === 'battle';
 
@@ -97,6 +102,7 @@ export function App() {
         {screen === 'puzzle' && <PuzzleScreen />}
       </main>
       {['map', 'heroes', 'hero', 'profile'].includes(screen) && <PlayDock />}
+      {!inFight && <WhatsNew />}
       {!inFight && screen !== 'prematch' && screen !== 'create' && (
         <nav className="tabs" aria-label="Main">
           {TABS.map((t) => (

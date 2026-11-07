@@ -73,6 +73,12 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
   Arch-Sorcerer of the Throne, a Ranger as Warden of the Last Road, a Bard as Bard of the Endless Song
   (`src/data/ranks.ts`). Each step is a milestone quest.
 
+## What's new and feedback
+
+After an update the game shows once what changed (every version is on the Profile screen, under About; the list is
+`src/changelog.ts`, with the version in `package.json`). **Send feedback** on the Profile screen opens an e-mail with
+the version and your device filled in.
+
 ## Install as an app
 
 Pawnquest is a Progressive Web App. In Chrome or Edge (computer or Android) use **Install Pawnquest** on the

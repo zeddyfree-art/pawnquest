@@ -523,3 +523,11 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 .victory-fx { position: fixed; inset: 0; pointer-events: none; z-index: 30; width: 100vw; height: 100vh; }
 
 .piece-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+/* What's new: a parchment panel over the game, once after an update. */
+.news-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: rgba(40, 28, 18, 0.45); }
+.news { max-width: 460px; width: 100%; max-height: calc(100dvh - 32px); overflow: auto; margin: 0; }
+.news h2 { margin-top: 0; }
+.news ul, .news-all ul { padding-left: 20px; display: grid; gap: 6px; }
+.news .btn { display: block; margin: 8px 0 0 auto; }
+.news-all summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
