@@ -1,6 +1,7 @@
 # Generated art
 
-The rivals' portraits and figures and the world-map regions in this folder were made with ChatGPT's image
+The rivals' portraits and figures, the world-map regions, the hero (body, hair, faces), the items (icons and
+worn layers) in this folder, and the app icons in public/, were made with ChatGPT's image
 generation (November 2026), from the project's own prompts and reference drawings (the art kit made from the
 code-drawn art), for Pawnquest, and are released with the project under the AGPL-3.0.
 

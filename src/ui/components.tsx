@@ -3,7 +3,8 @@ import { FACTIONS, type Character } from '../data/characters';
 import type { Crown } from '../game/progress';
 import { drawPortrait } from './pixelArt';
 import { BUST_SIZE, bustUrl, type Mood } from './portraits';
-import { portraitArt } from './art';
+import { itemIconArt, portraitArt } from './art';
+import { heroArtUrl, useHeroArt } from './heroArt';
 import { LOOKS } from '../data/looks';
 import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
@@ -105,11 +106,13 @@ export function Material({ roles, color, plus }: { roles: Role[]; color: 'white'
 export function HeroSprite({ hero, size = 128, mood = 'idle', pet = true, className = '' }: { hero: Hero; size?: number; mood?: HeroMood; pet?: boolean; className?: string }) {
   const scale = size / HERO_H;
   const history = useSave((s) => s.history);
+  useHeroArt((s) => s.version);
+  const art = heroArtUrl(hero.look, outfitOf(hero), mood);
   const stage = petStage(history, hero.pet);
   const scholar = owlScholar(history);
   return (
     <span className={`hero-sprite ${className}`} style={{ height: size }} aria-hidden="true">
-      <img src={heroUrl(hero.look, outfitOf(hero), mood)} alt="" width={HERO_W * scale} height={size} />
+      <img className={art ? 'art' : undefined} src={art ?? heroUrl(hero.look, outfitOf(hero), mood)} alt="" width={HERO_W * scale} height={size} />
       {pet && hero.pet && <img className="pet" src={petUrl(hero.pet, stage, scholar)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
     </span>
   );
@@ -119,17 +122,20 @@ export function HeroSprite({ hero, size = 128, mood = 'idle', pet = true, classN
 export function HeroBust({ hero, size = 44, mood = 'idle' }: { hero: Hero; size?: number; mood?: HeroMood }) {
   // The crop: 32×32 hero pixels from (8, 3).
   const k = size / 32;
+  useHeroArt((s) => s.version);
+  const art = heroArtUrl(hero.look, outfitOf(hero), mood);
   return (
     <span
-      className="hero-bust"
+      className={`hero-bust${art ? ' art' : ''}`}
       aria-hidden="true"
-      style={{ width: size, height: size, backgroundImage: `url("${heroUrl(hero.look, outfitOf(hero), mood)}")`, backgroundSize: `${HERO_W * k}px ${HERO_H * k}px`, backgroundPosition: `${-8 * k}px ${-3 * k}px` }}
+      style={{ width: size, height: size, backgroundImage: `url("${art ?? heroUrl(hero.look, outfitOf(hero), mood)}")`, backgroundSize: `${HERO_W * k}px ${HERO_H * k}px`, backgroundPosition: `${-8 * k}px ${-3 * k}px` }}
     />
   );
 }
 
 export function GearIcon({ art, size = 40, locked = false }: { art: GearArt; size?: number; locked?: boolean }) {
-  return <img className={`gear-icon${locked ? ' locked' : ''}`} src={gearIconUrl(art)} alt="" width={size} height={size} />;
+  const pic = itemIconArt(art);
+  return <img className={`gear-icon${locked ? ' locked' : ''}${pic ? ' art' : ''}`} src={pic ?? gearIconUrl(art)} alt="" width={size} height={size} />;
 }
 
 export function PetIcon({ kind, size = 40, locked = false, stage = 0, scholar = 0 }: { kind: PetKind; size?: number; locked?: boolean; stage?: PetStage; scholar?: Scholar }) {

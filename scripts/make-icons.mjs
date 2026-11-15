@@ -1,6 +1,7 @@
 // The app icons (for installing Pawnquest): the pixel pawn of the favicon on a wooden tile, drawn as SVG on a pixel
 // grid (crispEdges, whole-number scales) and rendered to PNG with Chromium. Run `node scripts/make-icons.mjs` after
-// changing the drawing; the results are committed in public/.
+// changing the drawing; the results are committed in public/. The PNG icons now come from generated art
+// (tools/art/process.py, from the art kit's icons/app-icon.png); this script still makes icon.svg, the favicon.
 import { writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 

@@ -268,8 +268,7 @@ export function ProfileScreen() {
           <a href="https://pulsarcp.itch.io/" target="_blank" rel="noreferrer">
             PulsarCP
           </a>
-          , used with permission. The rivals' portraits and figures and much of the world map were made with an image generator from the
-          game's own drawings. Thank you!
+          , used with permission. The characters, items and world map were made with an image generator from the game's own drawings. Thank you!
         </p>
         <p className="muted">Ratings are Pawnquest’s own scale and are not the same as Lichess or Chess.com ratings.</p>
         <p className="muted">
