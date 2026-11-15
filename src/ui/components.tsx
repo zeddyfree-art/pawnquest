@@ -3,6 +3,7 @@ import { FACTIONS, type Character } from '../data/characters';
 import type { Crown } from '../game/progress';
 import { drawPortrait } from './pixelArt';
 import { BUST_SIZE, bustUrl, type Mood } from './portraits';
+import { portraitArt } from './art';
 import { LOOKS } from '../data/looks';
 import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
@@ -20,6 +21,8 @@ export function Portrait({ character, size = 64, mood = 'idle', locked = false }
     if (!look && ref.current) drawPortrait(ref.current, character.name, character.faction);
   }, [character, look]);
   const cls = `portrait mood-${mood}${locked ? ' locked' : ''}`;
+  const art = portraitArt(character.id, mood);
+  if (art) return <img className={`${cls} art`} style={{ width: size, height: size, ['--fc' as string]: FACTIONS[character.faction].color }} src={art} alt="" aria-hidden="true" />;
   // Whole multiples of the 40-pixel art keep every pixel the same size (sharp, never smeared).
   const px = look ? Math.max(1, Math.round(size / BUST_SIZE)) * BUST_SIZE : size;
   const style = { width: px, height: px, ['--fc' as string]: FACTIONS[character.faction].color };

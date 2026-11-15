@@ -3,6 +3,7 @@
 // ground, path and scenery (hay and fences, shacks and puddles, cottages and fields, a moat and towers, pines and
 // mushrooms, lava and bones, pillars and a red carpet). The page puts buttons for the ranks on top of it.
 import { CHARACTERS, WORLDS, type Character, type WorldId } from '../data/characters';
+import { ART_MAP_REGIONS } from '../data/art';
 import { Canvas, any, ellipse, minus, pixelsToUrl, polygon, rect, tone, type Shape } from './pixel';
 
 export const MAP_W = 144;
@@ -470,11 +471,13 @@ function drawSeam(cv: Canvas, below: WorldId, above: WorldId, y: number, path: [
 }
 
 /** The map's pixels (colour strings, row by row). */
-export function renderMap(l: MapLayout): (string | null)[] {
+/** `art`: regions that have a generated picture (public/art/map): there only the path is drawn, over that picture. */
+export function renderMap(l: MapLayout, art: ReadonlySet<string> = new Set()): (string | null)[] {
   const cv = new Canvas(l.w, l.h);
   const r = rng(7);
   // Ground: each region's colours, speckled; the throne hall in tiles.
   for (const reg of l.regions) {
+    if (art.has(reg.world)) continue;
     const g = STYLE[reg.world].ground;
     for (let y = Math.max(0, Math.floor(reg.y0)); y < Math.min(l.h, Math.ceil(reg.y1)); y++)
       for (let x = 0; x < l.w; x++) {
@@ -503,11 +506,12 @@ export function renderMap(l: MapLayout): (string | null)[] {
       cv.set(Math.round(px + (r() - 0.5) * 4), Math.round(py + (r() - 0.5) * 4), regionAt(py).world === 'throne' ? '#8a2030' : tone(st.path, -0.12));
     }
   // Seams between regions (drawn over the path so the moat really crosses it, with its bridge).
-  for (let i = 0; i < l.regions.length - 1; i++) drawSeam(cv, l.regions[i].world, l.regions[i + 1].world, l.regions[i].y0, path);
+  for (let i = 0; i < l.regions.length - 1; i++)
+    if (!art.has(l.regions[i].world) && !art.has(l.regions[i + 1].world)) drawSeam(cv, l.regions[i].world, l.regions[i + 1].world, l.regions[i].y0, path);
   // Region by region: first the built things (walls, fields, a lava river, the hall), then the scenery around
   // them, kept off the path, the figures and the region signs; sorted by y so nearer things overlap.
   const placed: Placed[] = [];
-  for (const reg of l.regions) planRegion(cv, l, reg, path, r, placed);
+  for (const reg of l.regions) if (!art.has(reg.world)) planRegion(cv, l, reg, path, r, placed);
   placed.sort((a, b) => a.y - b.y).forEach((p) => p.d(cv, p.x, p.y, r));
   return cv.px;
 }
@@ -516,7 +520,7 @@ let cached: string | null = null;
 /** The map as a PNG data URL (browser only), drawn once. */
 export function mapUrl(l: MapLayout): string {
   if (cached) return cached;
-  const url = pixelsToUrl(renderMap(l), l.w, l.h);
+  const url = pixelsToUrl(renderMap(l, ART_MAP_REGIONS), l.w, l.h);
   if (url) cached = url;
   return url;
 }

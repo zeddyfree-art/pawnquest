@@ -1,6 +1,6 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 // `base: './'` keeps every asset path relative, so the build works on GitHub Pages
 // (https://<user>.github.io/pawnquest/) and from any other folder.
@@ -24,14 +24,17 @@ export default defineConfig({
       generateBundle(_options, bundle) {
         const build = `${commit}-${Date.now().toString(36)}`;
         // Saved as soon as the service worker is installed, so the app starts offline after the first visit (the page
-        // is already running before the worker is): its scripts, styles and fonts, the boards and piece sets, and the
-        // short jingles. The big files (Maia's runtime, Stockfish, the region music) are saved the first time they are
-        // used; the Maia models are kept by the app itself.
+        // is already running before the worker is): its scripts, styles and fonts, the boards and piece sets, the
+        // short jingles and the generated art (public/art). The big files (Maia's runtime, Stockfish, the region
+        // music) are saved the first time they are used; the Maia models are kept by the app itself.
         const files = (dir: string) => readdirSync(new URL(`./public/${dir}`, import.meta.url), { recursive: true, withFileTypes: true })
           .filter((f) => f.isFile() && f.name.endsWith('.png'))
           .map((f) => `${f.parentPath.split('/public/')[1]}/${f.name}`);
         const jingles = readdirSync(new URL('./public/audio', import.meta.url)).filter((f) => f.startsWith('jingle-')).map((f) => `audio/${f}`);
-        const precache = [...Object.keys(bundle).filter((f) => f.startsWith('assets/') && !f.endsWith('.wasm')), ...files('boards'), ...files('pieces'), ...jingles];
+        const art = existsSync(new URL('./public/art', import.meta.url))
+          ? readdirSync(new URL('./public/art', import.meta.url), { recursive: true, withFileTypes: true }).filter((f) => f.isFile() && f.name.endsWith('.webp')).map((f) => `${f.parentPath.split('/public/')[1]}/${f.name}`)
+          : [];
+        const precache = [...Object.keys(bundle).filter((f) => f.startsWith('assets/') && !f.endsWith('.wasm')), ...files('boards'), ...files('pieces'), ...jingles, ...art];
         const source = readFileSync(new URL('./pwa/sw.js', import.meta.url), 'utf8')
           .replace('__BUILD__', build)
           .replace("'__PRECACHE__'", precache.map((f) => JSON.stringify(`./${f}`)).join(', '));

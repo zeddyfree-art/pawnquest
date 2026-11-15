@@ -7,6 +7,7 @@ import { characterRecord } from '../../game/progress';
 import { useSave } from '../../store/save';
 import { CrownIcon, HeroSprite } from '../components';
 import { figureOf } from '../figures';
+import { figureArt, mapRegionArt } from '../art';
 import { heroUrl } from '../hero';
 import { useNav } from '../nav';
 import { heroSpot, mapLayout, mapUrl } from '../worldMap';
@@ -27,6 +28,10 @@ export function MapScreen() {
   return (
     <div className="map">
       <div className="worldmap" style={{ aspectRatio: `${layout.w} / ${layout.h}` }}>
+        {layout.regions.map((r) => {
+          const art = mapRegionArt(r.world);
+          return art && <img key={r.world} className="worldmap-region" src={art} alt="" aria-hidden="true" style={{ top: pct(Math.max(0, r.y0), layout.h), height: pct(Math.min(layout.h, r.y1) - Math.max(0, r.y0), layout.h) }} />;
+        })}
         <img className="worldmap-art" src={mapUrl(layout)} alt="" aria-hidden="true" />
         {layout.regions.map((r) => {
           const w = WORLDS.find((x) => x.id === r.world)!;
@@ -50,7 +55,11 @@ export function MapScreen() {
               aria-label={`${c.name}, ${c.rating}${rec.wins ? `, beaten ${rec.wins} times` : ''}`}
               onClick={() => challenge({ characterId: c.id, color: null, auto: false })}
             >
-              {fig && <img src={heroUrl(fig.look, fig.outfit)} alt="" width={(FIGURE * 3) / 4} height={FIGURE} />}
+              {figureArt(c.id) ? (
+                <img className="art" src={figureArt(c.id)!} alt="" width={(FIGURE * 3) / 4} height={FIGURE} />
+              ) : (
+                fig && <img src={heroUrl(fig.look, fig.outfit)} alt="" width={(FIGURE * 3) / 4} height={FIGURE} />
+              )}
               <span className="figure-label">
                 <b>
                   {rec.crown !== 'none' && <CrownIcon crown={rec.crown} size={12} />}
