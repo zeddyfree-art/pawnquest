@@ -338,6 +338,8 @@ cg-board square.selected { background-color: rgba(63, 134, 199, 0.45); }
 /* ---------- the hero ---------- */
 .hero-sprite { display: inline-flex; align-items: flex-end; gap: 0; position: relative; }
 .hero-sprite img, .gear-icon, .hero-bust, .piece-pair img { image-rendering: pixelated; }
+/* Generated art is finer than the screen grid: scale it smoothly. */
+.hero-sprite img.art, .gear-icon.art, .hero-bust.art, .worldmap .figure .hero-sprite img.art { image-rendering: auto; }
 .hero-sprite .pet { margin-left: -6%; margin-bottom: 1%; }
 @media (prefers-reduced-motion: no-preference) {
   .hero-sprite .pet { animation: pet-bob 1.6s ease-in-out infinite; }

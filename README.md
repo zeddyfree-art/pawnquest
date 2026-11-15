@@ -73,8 +73,9 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
   Arch-Sorcerer of the Throne, a Ranger as Warden of the Last Road, a Bard as Bard of the Endless Song
   (`src/data/ranks.ts`). Each step is a milestone quest.
 
-- **Generated art** (v0.10): the rivals' portraits (four moods each) and map figures, and the seven regions of the world
-  map, made with an image generator from the project's prompts and its code-drawn art as reference
+- **Generated art** (v0.10): the rivals' portraits (four moods each) and map figures, the seven regions of the world map,
+  the hero (built from layers: body per skin tone, hair recoloured to the chosen colour, faces, every item worn),
+  the item icons and the app icon, made with an image generator from the project's prompts and its code-drawn art as reference
   (`public/art/`, see its CREDITS.md). `tools/art/process.py` prepares new images; anything without art is still
   drawn in code.
 
