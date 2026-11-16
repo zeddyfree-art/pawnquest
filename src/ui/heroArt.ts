@@ -133,6 +133,13 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   const wornImg = (slot: string) => worn.find(([s]) => s === slot)?.[1] ?? null;
   fitted(wornImg('legs'));
   fitted(wornImg('body'));
+  // Worn clothes can cover the base's hands (especially long cloaks). Restore just the
+  // exposed hands before posing; the compositor then places fingers over item grips.
+  // Armour supplies its own gauntlets and must keep those instead of bare skin.
+  if (!['armor', 'plate'].includes(outfit.body?.kind ?? '')) {
+    ctx.drawImage(base, 47, 165, 18, 16, 47, 165, 18, 16);
+    ctx.drawImage(base, 127, 165, 18, 16, 127, 165, 18, 16);
+  }
   const headKey = `v2-${body}-${mood}`;
   const skinPixels = (r: number, g: number, b: number) => {
     const [h, s] = hueSat(r, g, b);
