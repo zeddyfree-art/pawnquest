@@ -18,7 +18,7 @@ The six new head layers live in `public/art/hero/v2`. Warm skin pixels are recol
 
 `tools/art/hero-v2-source` contains the generated transparent source heads: one idle head and a two-column happy/sad sheet per version. `python tools/art/prepare-hero-heads.py tools/art/hero-v2-source` crops their alpha bounds and registers each head at `(48,30)` with a 96×94 bounding box. It requires Pillow. These are modular face layers, not complete character illustrations.
 
-This first prototype keeps the shared standing pose and existing equipment paintings. The more dynamic stance and diagonal weapon poses from the concept sheet would need another equipment registration pass. The current fit is a small shared variation, not 57 separately repainted clothing variants.
+The first prototype shown above used the shared standing pose. The [adventurous stance](hero-adventure-stance.md) adds a lean, wider foot placement, bent forearms and angled equipment using these same registered layers. The body fit remains a small shared variation, not 57 separately repainted clothing variants.
 
 ## Validation
 

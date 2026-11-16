@@ -11,15 +11,25 @@ try {
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('response', (r) => { if (r.status() >= 400 && r.url().includes('/art/')) errors.push(`${r.status()} ${r.url()}`); });
   await page.goto(process.argv[2] ?? 'http://localhost:5173');
-  const result = await page.evaluate(async () => {
+  const result = await page.evaluate(async (equipmentGallery) => {
     const { heroArtUrl } = await import('/src/ui/heroArt.ts');
+    const { heroUrl } = await import('/src/ui/hero.ts');
     const { CLASSES, ITEMS, SKINS, EYES, HAIR_STYLES, newHero, outfitOf } = await import('/src/data/gear.ts');
     const look = { skin: SKINS[2], hair: '#5a3a22', hairStyle: 'messy', eyes: EYES[0] };
     const render = async (hero, mood = 'idle') => {
       const start = performance.now();
       for (;;) {
         const url = heroArtUrl(hero.look, outfitOf(hero), mood);
-        if (url) return url;
+        if (url) {
+          const image = new Image(); image.src = url; await image.decode();
+          const canvas = document.createElement('canvas'); canvas.width = 192; canvas.height = 256;
+          const ctx = canvas.getContext('2d'); ctx.drawImage(image, 0, 0);
+          const rgba = ctx.getImageData(0, 0, 192, 256).data;
+          for (let y = 0; y < 256; y++) for (let x = 0; x < 192; x++) {
+            if ((x < 2 || x >= 190 || y < 2 || y >= 254) && rgba[(y * 192 + x) * 4 + 3] > 50) throw new Error(`Pose clips canvas: ${JSON.stringify(hero.equip)}`);
+          }
+          return url;
+        }
         if (performance.now() - start > 15_000) throw new Error(`Missing painted layers: ${JSON.stringify(hero)} ${mood}`);
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
@@ -38,6 +48,8 @@ try {
         const hero = newHero('Check', 'squire', { ...look, body });
         hero.equip[item.art.slot] = item.id;
         await render(hero); items++;
+        if (!heroUrl(hero.look, outfitOf(hero), 'idle', true)) throw new Error(`Code fallback missing: ${item.id}`);
+        if (equipmentGallery && ['main', 'off', 'head'].includes(item.art.slot)) await add(hero, `${body} · ${item.name}`);
       }
       for (const hair of HAIR_STYLES) await render(newHero('Hair', 'bard', { ...look, body, hairStyle: hair.id }));
       const original = await render(newHero('Palette', 'squire', { ...look, body }));
@@ -64,7 +76,7 @@ try {
     if (await render(legacy) !== await render({ ...legacy, look: { ...look, body: 'male' } })) throw new Error('Legacy body default differs');
     document.body.replaceChildren(grid);
     return { items, bodies: 2, skinEyeCombinations: SKINS.length * EYES.length * 2, hairChecks: HAIR_STYLES.length * 2 };
-  });
+  }, process.argv[4] === 'equipment');
   assert.deepEqual(errors, []);
   await page.screenshot({ path: process.argv[3] ?? '/tmp/hero-preview.png', fullPage: true });
   console.log(JSON.stringify({ ...result, errors }, null, 2));

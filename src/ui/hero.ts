@@ -3,6 +3,7 @@
 // sprites drawn beside the hero. Every part is a smooth shape with its own darker outline and a light rim.
 import { ART_PETS } from '../data/art';
 import { bodyWidthAt } from './heroRig';
+import { composeAdventureFigure } from './heroPose';
 import { Canvas, ScaledCanvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
 
 export const HERO_W = 48;
@@ -830,8 +831,24 @@ const memo = (key: string, make: () => string) => {
   return url;
 };
 
-export function heroUrl(look: HeroLook, outfit: Outfit, mood: HeroMood = 'idle'): string {
-  return memo(`hero:${JSON.stringify([look, outfit, mood])}`, () => pixelsToUrl(renderHero(look, outfit, { mood }), HERO_W * HERO_SCALE, HERO_H * HERO_SCALE));
+export function heroUrl(look: HeroLook, outfit: Outfit, mood: HeroMood = 'idle', adventure = false): string {
+  return memo(`hero:${JSON.stringify([look, outfit, mood, adventure])}`, () => {
+    if (!adventure) return pixelsToUrl(renderHero(look, outfit, { mood }), HERO_W * HERO_SCALE, HERO_H * HERO_SCALE);
+    if (typeof document === 'undefined') return '';
+    const canvas = (px: (string | null)[]) => {
+      const c = document.createElement('canvas'); c.width = 192; c.height = 256;
+      const ctx = c.getContext('2d');
+      if (ctx) px.forEach((color, i) => {
+        if (!color) return;
+        ctx.fillStyle = color; ctx.fillRect((i % 96) * 2, Math.floor(i / 96) * 2, 2, 2);
+      });
+      return c;
+    };
+    const figure = canvas(renderHero(look, { ...outfit, main: undefined, off: undefined }, { mood, shadow: false }));
+    const main = outfit.main ? canvas(renderHero(look, outfit, { only: 'main' })) : null;
+    const off = outfit.off ? canvas(renderHero(look, outfit, { only: 'off' })) : null;
+    return composeAdventureFigure(figure, { main: outfit.main?.kind, off: outfit.off?.kind }, main, off).toDataURL('image/png');
+  });
 }
 
 export function gearIconUrl(art: GearArt): string {

@@ -8,6 +8,7 @@ import { ART_HERO, ART_WORN } from '../data/art';
 import { EYES, ITEMS, SKINS } from '../data/gear';
 import type { HeroLook, HeroMood, Outfit } from './hero';
 import { bodyWidthAt } from './heroRig';
+import { composeAdventureFigure } from './heroPose';
 
 const W = 192;
 const H = 256;
@@ -116,11 +117,6 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   c.height = H;
   const ctx = c.getContext('2d');
   if (!ctx) return null;
-  // A soft shadow under the feet, then the layers back to front.
-  ctx.fillStyle = 'rgba(59, 38, 23, 0.22)';
-  ctx.beginPath();
-  ctx.ellipse(W / 2, 57 * 4, 11 * 4, 1.8 * 4, 0, 0, Math.PI * 2);
-  ctx.fill();
   const draw = (img: CanvasImageSource | null) => img && ctx.drawImage(img, 0, 0, W, H);
   const paintedHair = hair && hairImg ? recoloured(hairImg, `hair-${hair}`, look.hair) : null;
   // Long hair sits behind shoulders and clothes; the fringe stays in front of the head.
@@ -147,9 +143,9 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   if (paintedHair) ctx.drawImage(paintedHair, 0, 0, W, 116, 0, 0, W, 116);
   draw(wornImg('face'));
   draw(wornImg('head'));
-  draw(wornImg('main'));
-  draw(wornImg('off'));
-  const url = c.toDataURL('image/png');
+  const pose = { main: outfit.main?.kind, off: outfit.off?.kind };
+  const final = composeAdventureFigure(c, pose, wornImg('main'), wornImg('off'));
+  const url = final.toDataURL('image/png');
   urls.set(key, url);
   return url;
 }

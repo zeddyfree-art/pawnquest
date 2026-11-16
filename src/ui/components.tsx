@@ -114,7 +114,7 @@ export function HeroSprite({ hero, size = 128, mood = 'idle', pet = true, classN
   const scholar = owlScholar(history);
   return (
     <span className={`hero-sprite ${className}`} style={{ height: size }} aria-hidden="true">
-      <img className={art ? 'art' : undefined} src={art ?? heroUrl(hero.look, outfitOf(hero), mood)} alt="" width={HERO_W * scale} height={size} />
+      <img className={art ? 'art' : undefined} src={art ?? heroUrl(hero.look, outfitOf(hero), mood, true)} alt="" width={HERO_W * scale} height={size} />
       {pet && hero.pet && <img className={`pet${isArt(petUrl(hero.pet, stage, scholar)) ? ' art' : ''}`} src={petUrl(hero.pet, stage, scholar)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
     </span>
   );
@@ -130,7 +130,7 @@ export function HeroBust({ hero, size = 44, mood = 'idle' }: { hero: Hero; size?
     <span
       className={`hero-bust${art ? ' art' : ''}`}
       aria-hidden="true"
-      style={{ width: size, height: size, backgroundImage: `url("${art ?? heroUrl(hero.look, outfitOf(hero), mood)}")`, backgroundSize: `${HERO_W * k}px ${HERO_H * k}px`, backgroundPosition: `${-8 * k}px ${-3 * k}px` }}
+      style={{ width: size, height: size, backgroundImage: `url("${art ?? heroUrl(hero.look, outfitOf(hero), mood, true)}")`, backgroundSize: `${HERO_W * k}px ${HERO_H * k}px`, backgroundPosition: `${-8 * k}px ${-3 * k}px` }}
     />
   );
 }
