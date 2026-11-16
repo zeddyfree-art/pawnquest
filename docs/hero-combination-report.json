@@ -1,0 +1,13 @@
+{
+  "totals": {
+    "headHairBody": 2880,
+    "headHairFace": 960,
+    "headBodyFace": 1152,
+    "closedHatPixelChecks": 3072,
+    "braidPixelChecks": 240,
+    "bodyMainOff": 3744,
+    "bodyLegs": 168
+  },
+  "errors": [],
+  "failures": []
+}

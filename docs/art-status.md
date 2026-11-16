@@ -12,7 +12,9 @@ Asset coverage is complete; that does not establish correct occlusion for every 
 - [x] Reserve canvas clearance for tilted tall hats.
 - [x] Restore exposed hands above ordinary clothes, including Traveller’s Cloak, Ranger’s Cloak and Hero’s Mantle. Preserve the painted gauntlets on armour.
 - [x] Keep fingers over weapon grips, with the lute, shields and books in front of the holding hand.
-- [ ] Extend visual combination coverage beyond the existing representative combinations: all compatible head/hair/body combinations and main/off-hand pairs. Individual item coverage and representative screenshots are already checked; exhaustive combination coverage is not.
+- [x] Extend combination coverage: 8,904 renders covering head/hair/body, head/hair/face, head/body/face, body/main/off and body/legs matrices on both heroes. Closed-hat and braid occlusion have pixel regressions; gallery examples were visually reviewed. See the [combination audit](hero-combination-audit.md) for exact coverage and limits.
+- [x] Keep buns and spikes underneath closed hats; leave crowns and feathers open.
+- [x] Keep front braids above clothing while loose long hair stays behind it.
 
 ## Hand regression
 
