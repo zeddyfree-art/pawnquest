@@ -1,10 +1,11 @@
 // The player's hero from generated art: the layers in public/art (base body per skin tone, hair, faces, worn items)
 // stacked on a 192×256 canvas, the 48×64 design at 4×, in the same order the code drawing uses. The hair is painted
-// in brown and recoloured here. Until every layer a hero needs has loaded (or when one is missing), the hero is
-// drawn in code (hero.ts); `useHeroArt` changes when more layers arrive, so the pictures update.
+// in brown and the eyes in dark blue-violet; both are recoloured here to the hero's own colours. Until every layer
+// a hero needs has loaded (or when one is missing), the hero is drawn in code (hero.ts); `useHeroArt` changes when
+// more layers arrive, so the pictures update.
 import { create } from 'zustand';
 import { ART_HERO, ART_WORN } from '../data/art';
-import { ITEMS, SKINS } from '../data/gear';
+import { EYES, ITEMS, SKINS } from '../data/gear';
 import type { HeroLook, HeroMood, Outfit } from './hero';
 
 const W = 192;
@@ -37,11 +38,25 @@ function layer(rel: string): HTMLImageElement | null {
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const lum = (r: number, g: number, b: number) => 0.3 * r + 0.59 * g + 0.11 * b;
 
-const hairCache = new Map<string, HTMLCanvasElement>();
-/** The hair layer in another colour: each pixel keeps its lightness relative to the painted brown; the darkest
- * pixels (the outline) stay as they are. */
-function recoloured(img: HTMLImageElement, key: string, color: string): HTMLCanvasElement | null {
-  const hit = hairCache.get(`${key}:${color}`);
+/** Hue (degrees) and saturation of a colour. */
+function hueSat(r: number, g: number, b: number): [number, number] {
+  const mx = Math.max(r, g, b);
+  const d = mx - Math.min(r, g, b);
+  if (!d) return [0, 0];
+  const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, d / mx];
+}
+/** The painted eyes: the dark blue-violet iris (the outlines and mouth are brown, the light catch white). */
+const isIris = (r: number, g: number, b: number) => {
+  const [h, s] = hueSat(r, g, b);
+  return h >= 225 && h <= 295 && s >= 0.2;
+};
+
+const recolourCache = new Map<string, HTMLCanvasElement>();
+/** A layer in another colour: each pixel picked (all of them, or those `only` accepts) keeps its lightness relative
+ * to the painted colour; with `keepDark`, the darkest pixels (the outline) stay as they are. */
+function recoloured(img: HTMLImageElement, key: string, color: string, only?: (r: number, g: number, b: number) => boolean, keepDark = true): HTMLCanvasElement | null {
+  const hit = recolourCache.get(`${key}:${color}`);
   if (hit) return hit;
   const c = document.createElement('canvas');
   c.width = W;
@@ -52,21 +67,22 @@ function recoloured(img: HTMLImageElement, key: string, color: string): HTMLCanv
   const data = ctx.getImageData(0, 0, W, H);
   const px = data.data;
   const ls: number[] = [];
-  for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 0) ls.push(lum(px[i], px[i + 1], px[i + 2]));
+  const picked = (i: number) => px[i + 3] > 0 && (!only || only(px[i], px[i + 1], px[i + 2]));
+  for (let i = 0; i < px.length; i += 4) if (picked(i)) ls.push(lum(px[i], px[i + 1], px[i + 2]));
   ls.sort((a, b) => a - b);
   const mid = ls[Math.floor(ls.length / 2)] || 1;
   const [tr, tg, tb] = rgb(color);
   for (let i = 0; i < px.length; i += 4) {
-    if (px[i + 3] === 0) continue;
+    if (!picked(i)) continue;
     const l = lum(px[i], px[i + 1], px[i + 2]);
-    if (l < mid * 0.45) continue; // outline
+    if (keepDark && l < mid * 0.45) continue; // outline
     const k = l / mid;
     px[i] = Math.min(255, tr * k);
     px[i + 1] = Math.min(255, tg * k);
     px[i + 2] = Math.min(255, tb * k);
   }
   ctx.putImageData(data, 0, 0);
-  hairCache.set(`${key}:${color}`, c);
+  recolourCache.set(`${key}:${color}`, c);
   return c;
 }
 
@@ -83,7 +99,7 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   if (!ART_HERO.has(`face-${mood}`)) return null;
   const order = (['legs', 'body', 'face', 'head', 'main', 'off'] as const).map((slot) => [slot, itemId(outfit[slot])] as const);
   if (order.some(([slot, id]) => outfit[slot] && (!id || !ART_WORN.has(id)))) return null;
-  const key = JSON.stringify([skin, hair, look.hair, mood, order]);
+  const key = JSON.stringify([skin, hair, look.hair, look.eyes, mood, order]);
   const done = urls.get(key);
   if (done) return done;
 
@@ -108,8 +124,9 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   const wornImg = (slot: string) => worn.find(([s]) => s === slot)?.[1] ?? null;
   draw(wornImg('legs'));
   draw(wornImg('body'));
-  draw(face);
-  if (hair && hairImg) draw(recoloured(hairImg, hair, look.hair));
+  // The faces are painted with the first eye colour; others recolour the iris.
+  draw(look.eyes && look.eyes !== EYES[0] ? recoloured(face, `face-${mood}`, look.eyes, isIris, false) : face);
+  if (hair && hairImg) draw(recoloured(hairImg, `hair-${hair}`, look.hair));
   draw(wornImg('face'));
   draw(wornImg('head'));
   draw(wornImg('main'));

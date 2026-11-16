@@ -103,6 +103,7 @@ interface DriveFile {
   id: string;
   name: string;
   role?: string;
+  props: Record<string, string>;
   parents: string[];
   content: string;
   version: number;
@@ -122,7 +123,7 @@ function fakeDrive() {
         const body = req.postData() ?? '';
         const parts = body.split(/--pq\w+/).map((p) => p.split('\r\n\r\n').slice(1).join('\r\n\r\n').replace(/\r\n$/, ''));
         const m = JSON.parse(parts[1]);
-        const f = { id: `f${++n}`, name: m.name, role: m.appProperties?.repertoireApp, parents: m.parents ?? [], content: parts[2], version: 1 };
+        const f = { id: `f${++n}`, name: m.name, role: m.appProperties?.repertoireApp, props: m.appProperties ?? {}, parents: m.parents ?? [], content: parts[2], version: 1 };
         files.push(f);
         return route.fulfill({ json: meta(f) });
       }
@@ -134,7 +135,7 @@ function fakeDrive() {
       }
       if (req.method() === 'POST') {
         const m = JSON.parse(req.postData() ?? '{}');
-        const f = { id: `f${++n}`, name: m.name, role: m.appProperties?.repertoireApp, parents: m.parents ?? [], content: '', version: 1 };
+        const f = { id: `f${++n}`, name: m.name, role: m.appProperties?.repertoireApp, props: m.appProperties ?? {}, parents: m.parents ?? [], content: '', version: 1 };
         files.push(f);
         return route.fulfill({ json: { id: f.id } });
       }
@@ -143,8 +144,8 @@ function fakeDrive() {
         if (!f) return route.fulfill({ status: 404, body: '' });
         return url.searchParams.get('alt') === 'media' ? route.fulfill({ body: f.content }) : route.fulfill({ json: meta(f) });
       }
-      const role = /value='([^']+)'/.exec(url.searchParams.get('q') ?? '')?.[1];
-      return route.fulfill({ json: { files: files.filter((f) => f.role === role).map(meta) } });
+      const [, key, value] = /key='([^']+)' and value='([^']+)'/.exec(url.searchParams.get('q') ?? '') ?? [];
+      return route.fulfill({ json: { files: files.filter((f) => f.props[key] === value).map(meta) } });
     });
   };
   return { files, use };

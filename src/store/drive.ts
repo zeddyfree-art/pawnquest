@@ -182,9 +182,9 @@ async function folder(role: string, name: string, parent?: string): Promise<stri
   return made.id;
 }
 
-async function createFile(name: string, role: string, parent: string, type: string, content: string): Promise<DriveFile> {
+async function createFile(name: string, role: string, parent: string, type: string, content: string, tags: Record<string, string> = {}): Promise<DriveFile> {
   const boundary = `pq${Math.random().toString(36).slice(2)}`;
-  const meta = { name, parents: [parent], mimeType: type, appProperties: { [APP_KEY]: role } };
+  const meta = { name, parents: [parent], mimeType: type, appProperties: { [APP_KEY]: role, ...tags } };
   return api<DriveFile>(`${UPLOAD}/files?uploadType=multipart&fields=id,version`, {
     method: 'POST',
     headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
@@ -262,6 +262,13 @@ async function syncSave() {
 // ---------------------------------------------------------------------------
 // Games for the Repertoire app
 
+/** Whether this game's file is already waiting in the inbox (tagged with its id when it was sent). */
+async function inInbox(id: string): Promise<boolean> {
+  const q = `appProperties has { key='pawnquestId' and value='${id.replace(/'/g, '')}' } and trashed=false`;
+  const r = await api<{ files: DriveFile[] }>(`${API}/files?${new URLSearchParams({ q, fields: 'files(id)', spaces: 'drive' })}`);
+  return !!r.files?.length;
+}
+
 async function sendGames() {
   // Earlier versions kept the list on the device only.
   const sent = new Set([...(useSave.getState().sent ?? []), ...readStored().sent]);
@@ -272,7 +279,9 @@ async function sendGames() {
   const you = useSave.getState().hero?.name || 'You';
   for (const g of games) {
     const opponent = characterById(g.characterId)?.name ?? 'Opponent';
-    await createFile(`${g.date.slice(0, 10)} ${you} vs ${opponent}.pgn`, 'inbox-game', inbox, 'application/x-chess-pgn', gamePgn(g, you, opponent));
+    // Another device may have sent it a moment ago (before its list of sent games reached this one).
+    if (!(await inInbox(g.id)))
+      await createFile(`${g.date.slice(0, 10)} ${you} vs ${opponent}.pgn`, 'inbox-game', inbox, 'application/x-chess-pgn', gamePgn(g, you, opponent), { pawnquestId: g.id });
     sent.add(g.id);
     useSave.setState({ sent: [...sent] });
   }

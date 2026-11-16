@@ -7,6 +7,9 @@ src/data/art.ts. Run: python3 tools/art/process.py <results dir> [more results d
 - Item icons (items/<slot>/<id>-icon.png) become squares; worn layers (<id>-worn.png) keep the hero's 3:4 canvas.
 - The hero: the base body (its painted face removed, one file per skin tone), hair styles and the three faces, all
   on the same 3:4 canvas so the game can stack them with the worn items (src/ui/heroArt.ts).
+- Pets (pets/<id>-stage<n>[-scholar<s>].png on magenta), fight backdrops (backdrops/<world>.png), boards
+  (boards/<id>.png, 8x8 with a1 dark) and piece sheets (pieces/<set>-<color>.png: a 3x2 grid, king queen rook /
+  bishop knight pawn) become one file each, the sheets one file per piece.
 - The app icon (icons/app-icon.png, a rounded tile on magenta) becomes public/icon-192/512.png (transparent corners),
   apple-touch-icon.png (cropped to the inside of the tile, so it fills the square) and icon-maskable-512.png (that
   crop in the middle 82%, on the tile's wood).
@@ -24,7 +27,12 @@ MAP_W = 576  # 4x the map's 144-pixel width
 MAP_BANDS = {'training': 79, 'gutter': 315, 'village': 315, 'castle': 315, 'wilds': 315, 'underworld': 315, 'throne': 79}
 MOODS = ['idle', 'thinking', 'smug', 'defeated']
 ICON = 128
-HERO = (192, 256)  # the hero's 48x64 design at 4x; shown at up to 160 css px tall
+HERO = (192, 256)
+PET = 128  # shown at up to about 65 css px
+BACKDROP = (384, 480)  # 3x the 128x160 backdrop
+BOARD = 512
+PIECE = 128  # shown at up to about 64 css px
+ROLES = ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn']  # the hero's 48x64 design at 4x; shown at up to 160 css px tall
 # The skin tones a hero can pick (src/data/gear.ts SKINS); the generated base body is painted in the third.
 SKINS = ['#f6dccb', '#f6d3b3', '#efc29a', '#d99a6c', '#b06f45', '#7a4a2f']
 
@@ -99,7 +107,7 @@ def hero_bases(path):
 
 
 def main(dirs):
-    art = {'portraits': [], 'figures': [], 'mapRegions': [], 'icons': [], 'worn': [], 'hero': []}
+    art = {'portraits': [], 'figures': [], 'mapRegions': [], 'icons': [], 'worn': [], 'hero': [], 'pets': [], 'backdrops': [], 'boards': [], 'pieces': []}
     for d in dirs:
         for root, _, files in os.walk(d):
             for fn in sorted(files):
@@ -141,6 +149,31 @@ def main(dirs):
                     save(shrink_rgba(unmagenta(Image.open(path)), HERO), f'hero/{part}-{fn[:-4]}.png')
                     art['hero'].append(f'{part}-{fn[:-4]}')
                     continue
+                folder = os.path.basename(root)
+                if folder == 'pets' and fn.endswith('.png'):
+                    save(shrink_rgba(unmagenta(Image.open(path)), (PET, PET)), f'pets/{fn}')
+                    art['pets'].append(fn[:-4])
+                    continue
+                if folder == 'backdrops' and fn.endswith('.png'):
+                    save(Image.open(path).convert('RGB').resize(BACKDROP, Image.LANCZOS), f'backdrops/{fn}')
+                    art['backdrops'].append(fn[:-4])
+                    continue
+                if folder == 'boards' and fn.endswith('.png'):
+                    save(Image.open(path).convert('RGB').resize((BOARD, BOARD), Image.LANCZOS), f'boards/{fn}')
+                    art['boards'].append(fn[:-4])
+                    continue
+                m = re.match(r'([a-z]+)-(white|black)\.png$', fn)
+                if folder == 'pieces' and m:
+                    set_id, color = m.groups()
+                    sheet = unmagenta(Image.open(path))
+                    cw, ch = sheet.width // 3, sheet.height // 2
+                    for k, role in enumerate(ROLES):
+                        cell = sheet.crop(((k % 3) * cw, (k // 3) * ch, (k % 3 + 1) * cw, (k // 3 + 1) * ch))
+                        side = min(cell.size)  # square, centred
+                        cell = cell.crop(((cell.width - side) // 2, cell.height - side, (cell.width + side) // 2, cell.height))
+                        save(shrink_rgba(cell, (PIECE, PIECE)), f'pieces/{set_id}/{color}-{role}.png')
+                    art['pieces'].append(f'{set_id}-{color}')
+                    continue
                 if fn == 'app-icon.png':
                     tile = unmagenta(Image.open(path))
                     box = tile.getchannel('A').getbbox()
@@ -168,6 +201,8 @@ def main(dirs):
                         continue
                     save(img.resize((MAP_W, round(MAP_W * want)), Image.LANCZOS), f'map/{world}.png')
                     art['mapRegions'].append(world)
+    # A piece set counts once both colours are there.
+    art['pieces'] = [p[:-6] for p in art['pieces'] if p.endswith('-white') and p[:-6] + '-black' in art['pieces']]
     for k in art:
         art[k] = sorted(set(art[k]))
     with open(os.path.join(ROOT, 'src', 'data', 'art.ts'), 'w') as f:

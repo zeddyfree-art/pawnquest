@@ -5,6 +5,8 @@ import { drawPortrait } from './pixelArt';
 import { BUST_SIZE, bustUrl, type Mood } from './portraits';
 import { itemIconArt, portraitArt } from './art';
 import { heroArtUrl, useHeroArt } from './heroArt';
+
+const isArt = (url: string) => url.endsWith('.webp');
 import { LOOKS } from '../data/looks';
 import { pieceDataUrl } from './pieces';
 import type { Role } from 'chessops/types';
@@ -113,7 +115,7 @@ export function HeroSprite({ hero, size = 128, mood = 'idle', pet = true, classN
   return (
     <span className={`hero-sprite ${className}`} style={{ height: size }} aria-hidden="true">
       <img className={art ? 'art' : undefined} src={art ?? heroUrl(hero.look, outfitOf(hero), mood)} alt="" width={HERO_W * scale} height={size} />
-      {pet && hero.pet && <img className="pet" src={petUrl(hero.pet, stage, scholar)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
+      {pet && hero.pet && <img className={`pet${isArt(petUrl(hero.pet, stage, scholar)) ? ' art' : ''}`} src={petUrl(hero.pet, stage, scholar)} alt="" width={petSize(stage) * scale} height={petSize(stage) * scale} />}
     </span>
   );
 }
@@ -139,5 +141,6 @@ export function GearIcon({ art, size = 40, locked = false }: { art: GearArt; siz
 }
 
 export function PetIcon({ kind, size = 40, locked = false, stage = 0, scholar = 0 }: { kind: PetKind; size?: number; locked?: boolean; stage?: PetStage; scholar?: Scholar }) {
-  return <img className={`gear-icon${locked ? ' locked' : ''}`} src={petUrl(kind, stage, scholar)} alt="" width={size} height={size} />;
+  const url = petUrl(kind, stage, scholar);
+  return <img className={`gear-icon${locked ? ' locked' : ''}${isArt(url) ? ' art' : ''}`} src={url} alt="" width={size} height={size} />;
 }
