@@ -9,11 +9,10 @@ import { EYES, ITEMS, SKINS } from '../data/gear';
 import type { HeroLook, HeroMood, Outfit } from './hero';
 import { bodyWidthAt } from './heroRig';
 import { composeAdventureFigure } from './heroPose';
+import { heroHairTop } from './heroLayers';
 
 const W = 192;
 const H = 256;
-/** Head gear that covers all the hair (as in the code drawing). */
-const HIDES_HAIR = new Set(['hood', 'helmet']);
 
 export const useHeroArt = create<{ version: number }>(() => ({ version: 0 }));
 
@@ -96,7 +95,8 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   if (typeof document === 'undefined' || !ART_HERO.has('base')) return null;
   const skin = SKINS.indexOf(look.skin);
   if (skin < 0 || look.beard || look.face) return null;
-  const hair = look.hairStyle !== 'none' && !HIDES_HAIR.has(outfit.head?.kind ?? '') ? look.hairStyle : null;
+  const hairTop = heroHairTop(outfit.head?.kind);
+  const hair = look.hairStyle !== 'none' && Number.isFinite(hairTop) ? look.hairStyle : null;
   if (hair && !ART_HERO.has(`hair-${hair}`)) return null;
   if (!ART_HERO.has(`face-${mood}`)) return null;
   const order = (['legs', 'body', 'face', 'head', 'main', 'off'] as const).map((slot) => [slot, itemId(outfit[slot])] as const);
@@ -119,8 +119,8 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   if (!ctx) return null;
   const draw = (img: CanvasImageSource | null) => img && ctx.drawImage(img, 0, 0, W, H);
   const paintedHair = hair && hairImg ? recoloured(hairImg, `hair-${hair}`, look.hair) : null;
-  // Long hair sits behind shoulders and clothes; the fringe stays in front of the head.
-  if (paintedHair) ctx.drawImage(paintedHair, 0, 116, W, H - 116, 0, 116, W, H - 116);
+  // Loose hair and ponytails sit behind clothes; braids hang over the shoulders in front.
+  if (paintedHair && hair !== 'braids') ctx.drawImage(paintedHair, 0, 116, W, H - 116, 0, 116, W, H - 116);
   const fitted = (img: CanvasImageSource | null, start = 0) => {
     if (!img) return;
     for (let y = start; y < H; y++) {
@@ -133,6 +133,7 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   const wornImg = (slot: string) => worn.find(([s]) => s === slot)?.[1] ?? null;
   fitted(wornImg('legs'));
   fitted(wornImg('body'));
+  if (paintedHair && hair === 'braids') ctx.drawImage(paintedHair, 0, 116, W, H - 116, 0, 116, W, H - 116);
   // Worn clothes can cover the base's hands (especially long cloaks). Restore just the
   // exposed hands before posing; the compositor then places fingers over item grips.
   // Armour supplies its own gauntlets and must keep those instead of bare skin.
@@ -147,7 +148,7 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   };
   const head = recoloured(face, `${headKey}-skin`, look.skin, skinPixels) ?? face;
   draw(look.eyes && look.eyes !== EYES[0] ? recoloured(head, `${headKey}-${look.skin}-eyes`, look.eyes, isIris, false) : head);
-  if (paintedHair) ctx.drawImage(paintedHair, 0, 0, W, 116, 0, 0, W, 116);
+  if (paintedHair) ctx.drawImage(paintedHair, 0, hairTop, W, 116 - hairTop, 0, hairTop, W, 116 - hairTop);
   draw(wornImg('face'));
   draw(wornImg('head'));
   const pose = { main: outfit.main?.kind, off: outfit.off?.kind };

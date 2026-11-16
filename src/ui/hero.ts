@@ -4,6 +4,7 @@
 import { ART_PETS } from '../data/art';
 import { bodyWidthAt } from './heroRig';
 import { composeAdventureFigure } from './heroPose';
+import { heroHairTop } from './heroLayers';
 import { Canvas, ScaledCanvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
 
 export const HERO_W = 48;
@@ -568,6 +569,8 @@ function drawHeadGear(cv: Canvas, g: Extract<GearArt, { slot: 'head' }>) {
 const HIDES: Partial<Record<HeadKind, 'all' | 'top'>> = { hood: 'all', helmet: 'all', bandana: 'top', cap: 'top', jester: 'top' };
 
 export interface HeroOptions {
+  /** Player-only hair clipping in canonical 192×256 coordinates; rivals retain their original drawing. */
+  hairTop?: number;
   mood?: HeroMood;
   /** Draw only this slot's gear, without the hero (for item icons). */
   only?: Slot;
@@ -598,9 +601,17 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
     return cv.px;
   }
   const hides = outfit.head ? HIDES[outfit.head.kind] : undefined;
+  const hairLayer = (paint: (layer: ScaledCanvas) => void) => {
+    if (opts.hairTop === undefined) { paint(cv); return; }
+    if (!Number.isFinite(opts.hairTop)) return;
+    const layer = new ScaledCanvas(HERO_W, HERO_H, HERO_SCALE);
+    paint(layer);
+    const start = Math.ceil(opts.hairTop / 4 * HERO_SCALE) * HERO_W * HERO_SCALE;
+    for (let i = start; i < layer.px.length; i++) if (layer.px[i]) cv.px[i] = layer.px[i];
+  };
   if (opts.shadow !== false) drawShadow(cv);
   drawBackGear(cv, outfit);
-  if (!hides) drawBackHair(cv, look);
+  if (opts.hairTop !== undefined || !hides) hairLayer((layer) => drawBackHair(layer, look));
   drawLegs(cv, look, outfit);
   drawBody(cv, look, outfit, true);
   cv.part(NECK, tone(look.skin, -0.12));
@@ -608,8 +619,11 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   cv.part(HEAD, look.skin);
   drawFace(cv, look, opts.mood ?? 'idle');
   drawBeard(cv, look);
-  if (hides !== 'all') drawFrontHair(cv, look);
-  hairTexture(cv, look);
+  if (opts.hairTop !== undefined) hairLayer((layer) => { drawFrontHair(layer, look); hairTexture(layer, look); });
+  else {
+    if (hides !== 'all') drawFrontHair(cv, look);
+    hairTexture(cv, look);
+  }
   if (outfit.face) drawFaceGear(cv, outfit.face);
   if (outfit.head) drawHeadGear(cv, outfit.head);
   // What the hands hold comes last, in front of the head and hat (a staff reaches up past them), and the hands close
@@ -844,7 +858,7 @@ export function heroUrl(look: HeroLook, outfit: Outfit, mood: HeroMood = 'idle',
       });
       return c;
     };
-    const figure = canvas(renderHero(look, { ...outfit, main: undefined, off: undefined }, { mood, shadow: false }));
+    const figure = canvas(renderHero(look, { ...outfit, main: undefined, off: undefined }, { mood, shadow: false, hairTop: heroHairTop(outfit.head?.kind) }));
     const main = outfit.main ? canvas(renderHero(look, outfit, { only: 'main' })) : null;
     const off = outfit.off ? canvas(renderHero(look, outfit, { only: 'off' })) : null;
     return composeAdventureFigure(figure, { main: outfit.main?.kind, off: outfit.off?.kind }, main, off).toDataURL('image/png');
