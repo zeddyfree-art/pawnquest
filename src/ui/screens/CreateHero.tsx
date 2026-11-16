@@ -24,7 +24,7 @@ export function CreateHero() {
   const level = levelFor(xp).level;
   const [name, setName] = useState(existing?.name ?? '');
   const [cls, setCls] = useState<Hero['cls']>(existing?.cls ?? 'squire');
-  const [look, setLook] = useState<HeroLook>(existing?.look ?? { skin: SKINS[2], hair: HAIR_COLORS[1].color, hairStyle: 'messy', eyes: EYES[0] });
+  const [look, setLook] = useState<HeroLook>(existing?.look ?? { body: 'male', skin: SKINS[2], hair: HAIR_COLORS[1].color, hairStyle: 'messy', eyes: EYES[0] });
   const patch = (p: Partial<HeroLook>) => setLook({ ...look, ...p });
 
   // The class comes with its starting outfit. When editing, the hero keeps what they wear unless they pick another
@@ -40,7 +40,7 @@ export function CreateHero() {
     <div className="create">
       <h1>{existing ? 'Change your look' : 'Who goes on this quest?'}</h1>
       <div className="create-preview panel">
-        <HeroSprite hero={preview} size={128} />
+        <HeroSprite hero={preview} size={160} />
         <b className="pixel">{preview.name}</b>
         <small>{rankOf(cls, peak).name}</small>
       </div>
@@ -50,6 +50,18 @@ export function CreateHero() {
           <span>Name</span>
           <input value={name} maxLength={16} placeholder="Hero" onChange={(e) => setName(e.target.value)} autoComplete="off" />
         </label>
+
+        <fieldset>
+          <legend>Hero</legend>
+          <div className="chips" role="radiogroup" aria-label="Hero body">
+            {(['male', 'female'] as const).map((body) => (
+              <button key={body} role="radio" aria-checked={(look.body ?? 'male') === body} className={`chip${(look.body ?? 'male') === body ? ' on' : ''}`} onClick={() => patch({ body })}>
+                {body === 'male' ? 'Male' : 'Female'}
+              </button>
+            ))}
+          </div>
+          <small className="muted">Every hairstyle, class and item works with either hero.</small>
+        </fieldset>
 
         <fieldset>
           <legend>Class</legend>
