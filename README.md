@@ -75,7 +75,8 @@ All art is drawn in code (`src/ui/pieces.ts`, `boards.ts`, `scene.ts`, `portrait
 
 - **Generated art** (v0.10): the rivals' portraits (four moods each) and map figures, the seven regions of the world map,
   the hero (built from layers: body per skin tone, hair recoloured to the chosen colour, faces, every item worn),
-  the item icons and the app icon, made with an image generator from the project's prompts and its code-drawn art as reference
+  the item icons, the pets, the fight backdrops, the boards and piece sets drawn for the game, and the app
+  icon, made with an image generator from the project's prompts and its code-drawn art as reference
   (`public/art/`, see its CREDITS.md). `tools/art/process.py` prepares new images; anything without art is still
   drawn in code.
 

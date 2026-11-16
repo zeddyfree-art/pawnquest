@@ -2,6 +2,7 @@
 // ambient particles on top of it: falling leaves on the training field, rain in the Gutter, pollen in the Village,
 // dust in the Castle, fireflies in the Wilds, embers in the Underworld, sparkles in the Throne hall.
 import type { WorldId } from '../data/characters';
+import { ART_BACKDROPS } from '../data/art';
 
 /** The colour above the backdrop (the top of its sky), per region. */
 export const SKY_TOP: Record<WorldId, string> = {
@@ -192,6 +193,7 @@ const DRAW: Record<WorldId, (px: Px, r: () => number) => void> = {
 const cache = new Map<WorldId, string>();
 /** The region's backdrop as a PNG data URL (browser only). */
 export function backdropUrl(world: WorldId): string {
+  if (ART_BACKDROPS.has(world)) return `${import.meta.env.BASE_URL}art/backdrops/${world}.webp`;
   const hit = cache.get(world);
   if (hit !== undefined) return hit;
   if (typeof document === 'undefined') return '';

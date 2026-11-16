@@ -2,6 +2,7 @@
 // marble), from a seeded random source so the board looks the same every time. Each region has its own board;
 // the player can pick another in Profile → Settings.
 import type { WorldId } from '../data/characters';
+import { ART_BOARDS } from '../data/art';
 
 /** Boards drawn in code, and boards from PulsarCP's Pixel Art Chess Asset Pack (`px-…`, PNGs in public/boards). */
 export type BoardThemeId = 'wood' | 'cobble' | 'stone' | 'forest' | 'obsidian' | 'marble' | 'meadow' | 'campfire' | 'starfall' | 'library' | 'maptable' | 'chequered' | `px-${string}`;
@@ -185,6 +186,7 @@ export function renderBoard(t: BoardTheme): Uint8ClampedArray {
 
 const cache = new Map<string, string>();
 export function boardDataUrl(t: BoardTheme): string {
+  if (ART_BOARDS.has(t.id)) return `${import.meta.env.BASE_URL}art/boards/${t.id}.webp`;
   if (t.image) return `${import.meta.env.BASE_URL}boards/${t.image}.png`;
   const hit = cache.get(t.id);
   if (hit !== undefined) return hit;
@@ -202,6 +204,6 @@ export function boardDataUrl(t: BoardTheme): string {
 /** CSS for every theme: `.board-theme-<id>` on a parent picks the board and its frame colour. */
 export function boardsCss(): string {
   return BOARD_THEMES.map(
-    (t) => `.board-theme-${t.id} cg-board{background-image:url("${boardDataUrl(t)}");background-size:100% 100%;image-rendering:pixelated}.board-theme-${t.id}{--frame-color:${t.frame}}`,
+    (t) => `.board-theme-${t.id} cg-board{background-image:url("${boardDataUrl(t)}");background-size:100% 100%;image-rendering:${ART_BOARDS.has(t.id) ? 'auto' : 'pixelated'}}.board-theme-${t.id}{--frame-color:${t.frame}}`,
   ).join('\n');
 }

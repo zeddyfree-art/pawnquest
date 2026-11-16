@@ -3,6 +3,7 @@
 // edge decides how much light it catches from the top left, which gives the pieces a rounded, carved look.
 // A two-pixel outline in a warm dark keeps them readable at phone size; gold details mark king, queen and bishop.
 import type { Role } from 'chessops/types';
+import { ART_PIECES } from '../data/art';
 
 export const PIECE_SIZE = 64;
 const S = PIECE_SIZE / 32;
@@ -194,6 +195,7 @@ let currentSet: PieceSetId = 'classic';
 
 /** A PNG data URL of the piece (browser only; empty string elsewhere). */
 export function pieceDataUrl(role: Role, color: 'white' | 'black', set: PieceSetId = currentSet): string {
+  if (ART_PIECES.has(set)) return `${import.meta.env.BASE_URL}art/pieces/${set}/${color}-${role}.webp`;
   const pack = packOf(set);
   if (pack) return `${import.meta.env.BASE_URL}pieces/${pack}/${color}-${role}.png`;
   const key = role + color + set;
@@ -214,7 +216,10 @@ export const ROLES: Role[] = ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn
 
 /** CSS that gives chessground these pieces. */
 export function piecesCss(set: PieceSetId = currentSet): string {
-  return ROLES.flatMap((r) => (['white', 'black'] as const).map((c) => `.cg-wrap piece.${r}.${c}{background-image:url("${pieceDataUrl(r, c, set)}")}`)).join('\n');
+  const rules = ROLES.flatMap((r) => (['white', 'black'] as const).map((c) => `.cg-wrap piece.${r}.${c}{background-image:url("${pieceDataUrl(r, c, set)}")}`));
+  // Generated art is finer than the screen grid: scale it smoothly.
+  if (ART_PIECES.has(set)) rules.push('.cg-wrap piece{image-rendering:auto}');
+  return rules.join('\n');
 }
 
 /** Switches the pieces on every board (and in captured-piece rows drawn from now on). */

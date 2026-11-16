@@ -1,6 +1,7 @@
 // The player's hero, drawn in code like the portraits: a 48×64 full figure (chibi proportions) so all six gear
 // slots show: head, face, body, legs, main hand (viewer's left) and off hand (viewer's right). Pets are 20×20
 // sprites drawn beside the hero. Every part is a smooth shape with its own darker outline and a light rim.
+import { ART_PETS } from '../data/art';
 import { Canvas, ScaledCanvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
 
 export const HERO_W = 48;
@@ -826,6 +827,9 @@ export function gearIconUrl(art: GearArt): string {
 
 export function petUrl(kind: PetKind, stage: PetStage = 0, scholar: Scholar = 0): string {
   const sc = kind === 'owl' ? scholar : 0;
+  // Generated art (public/art/pets): the owl's study gear exists for the baby and the grown owl.
+  const art = sc ? `owl-stage${stage === 2 ? 2 : 0}-scholar${sc}` : `${kind}-stage${stage}`;
+  if (ART_PETS.has(art)) return `${import.meta.env.BASE_URL}art/pets/${art}.webp`;
   return memo(`pet:${kind}:${stage}:${sc}`, () => pixelsToUrl(renderPet(kind, stage, sc), petSize(stage) * PET_SCALE, petSize(stage) * PET_SCALE));
 }
 

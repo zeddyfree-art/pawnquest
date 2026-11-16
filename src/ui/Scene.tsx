@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import type { WorldId } from '../data/characters';
 import { backdropUrl, runAmbience, SKY_TOP } from './scene';
+import { ART_BACKDROPS } from '../data/art';
 
 const reducedMotion = () => typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -12,7 +13,7 @@ export function Scene({ world, motion, children }: { world: WorldId; motion: boo
     return runAmbience(canvas.current, world);
   }, [world, motion]);
   return (
-    <div className={`scene scene-${world}`} style={{ backgroundImage: `url("${backdropUrl(world)}")`, backgroundColor: SKY_TOP[world] }}>
+    <div className={`scene scene-${world}${ART_BACKDROPS.has(world) ? ' art' : ''}`} style={{ backgroundImage: `url("${backdropUrl(world)}")`, backgroundColor: SKY_TOP[world] }}>
       {motion && <canvas ref={canvas} className="ambience" aria-hidden="true" />}
       <div className="scene-content">{children}</div>
     </div>
