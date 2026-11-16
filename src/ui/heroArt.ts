@@ -1,4 +1,4 @@
-// The player's hero from generated art: the layers in public/art (base body per skin tone, hair, faces, worn items)
+// The player's hero from generated art: the layers in public/art (base body per skin tone, v2 heads, hair, worn items)
 // stacked on a 192×256 canvas, the 48×64 design at 4×, in the same order the code drawing uses. The hair is painted
 // in brown and the eyes in dark blue-violet; both are recoloured here to the hero's own colours. Until every layer
 // a hero needs has loaded (or when one is missing), the hero is drawn in code (hero.ts); `useHeroArt` changes when
@@ -7,6 +7,7 @@ import { create } from 'zustand';
 import { ART_HERO, ART_WORN } from '../data/art';
 import { EYES, ITEMS, SKINS } from '../data/gear';
 import type { HeroLook, HeroMood, Outfit } from './hero';
+import { bodyWidthAt } from './heroRig';
 
 const W = 192;
 const H = 256;
@@ -55,7 +56,7 @@ const isIris = (r: number, g: number, b: number) => {
 const recolourCache = new Map<string, HTMLCanvasElement>();
 /** A layer in another colour: each pixel picked (all of them, or those `only` accepts) keeps its lightness relative
  * to the painted colour; with `keepDark`, the darkest pixels (the outline) stay as they are. */
-function recoloured(img: HTMLImageElement, key: string, color: string, only?: (r: number, g: number, b: number) => boolean, keepDark = true): HTMLCanvasElement | null {
+function recoloured(img: CanvasImageSource, key: string, color: string, only?: (r: number, g: number, b: number) => boolean, keepDark = true): HTMLCanvasElement | null {
   const hit = recolourCache.get(`${key}:${color}`);
   if (hit) return hit;
   const c = document.createElement('canvas');
@@ -99,12 +100,13 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   if (!ART_HERO.has(`face-${mood}`)) return null;
   const order = (['legs', 'body', 'face', 'head', 'main', 'off'] as const).map((slot) => [slot, itemId(outfit[slot])] as const);
   if (order.some(([slot, id]) => outfit[slot] && (!id || !ART_WORN.has(id)))) return null;
-  const key = JSON.stringify([skin, hair, look.hair, look.eyes, mood, order]);
+  const body = look.body ?? 'male';
+  const key = JSON.stringify([body, skin, hair, look.hair, look.eyes, mood, order]);
   const done = urls.get(key);
   if (done) return done;
 
   const base = layer(`hero/base-${skin}`);
-  const face = layer(`hero/face-${mood}`);
+  const face = layer(`hero/v2/${body}-${mood}`);
   const hairImg = hair ? layer(`hero/hair-${hair}`) : null;
   const worn = order.map(([slot, id]) => [slot, id ? layer(`worn/${id}`) : null] as const);
   if (!base || !face || (hair && !hairImg) || worn.some(([slot, img]) => outfit[slot] && !img)) return null;
@@ -120,13 +122,29 @@ export function heroArtUrl(look: HeroLook, outfit: Outfit, mood: HeroMood): stri
   ctx.ellipse(W / 2, 57 * 4, 11 * 4, 1.8 * 4, 0, 0, Math.PI * 2);
   ctx.fill();
   const draw = (img: CanvasImageSource | null) => img && ctx.drawImage(img, 0, 0, W, H);
-  draw(base);
+  const paintedHair = hair && hairImg ? recoloured(hairImg, `hair-${hair}`, look.hair) : null;
+  // Long hair sits behind shoulders and clothes; the fringe stays in front of the head.
+  if (paintedHair) ctx.drawImage(paintedHair, 0, 116, W, H - 116, 0, 116, W, H - 116);
+  const fitted = (img: CanvasImageSource | null, start = 0) => {
+    if (!img) return;
+    for (let y = start; y < H; y++) {
+      const width = W * bodyWidthAt(body, y / 4);
+      ctx.drawImage(img, 0, y, W, 1, (W - width) / 2, y, width, 1);
+    }
+  };
+  // Keep the existing neck, hands, feet and equipment anchors. The old blank head is replaced.
+  fitted(base, 116);
   const wornImg = (slot: string) => worn.find(([s]) => s === slot)?.[1] ?? null;
-  draw(wornImg('legs'));
-  draw(wornImg('body'));
-  // The faces are painted with the first eye colour; others recolour the iris.
-  draw(look.eyes && look.eyes !== EYES[0] ? recoloured(face, `face-${mood}`, look.eyes, isIris, false) : face);
-  if (hair && hairImg) draw(recoloured(hairImg, `hair-${hair}`, look.hair));
+  fitted(wornImg('legs'));
+  fitted(wornImg('body'));
+  const headKey = `v2-${body}-${mood}`;
+  const skinPixels = (r: number, g: number, b: number) => {
+    const [h, s] = hueSat(r, g, b);
+    return h >= 10 && h <= 45 && s > 0.2 && lum(r, g, b) > 80;
+  };
+  const head = recoloured(face, `${headKey}-skin`, look.skin, skinPixels) ?? face;
+  draw(look.eyes && look.eyes !== EYES[0] ? recoloured(head, `${headKey}-${look.skin}-eyes`, look.eyes, isIris, false) : head);
+  if (paintedHair) ctx.drawImage(paintedHair, 0, 0, W, 116, 0, 0, W, 116);
   draw(wornImg('face'));
   draw(wornImg('head'));
   draw(wornImg('main'));

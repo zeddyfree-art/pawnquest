@@ -2,6 +2,7 @@
 // slots show: head, face, body, legs, main hand (viewer's left) and off hand (viewer's right). Pets are 20×20
 // sprites drawn beside the hero. Every part is a smooth shape with its own darker outline and a light rim.
 import { ART_PETS } from '../data/art';
+import { bodyWidthAt } from './heroRig';
 import { Canvas, ScaledCanvas, any, ellipse, minus, mirrorAround, only, pixelsToUrl, polygon, rect, segment, tone, type Pt, type Shape } from './pixel';
 
 export const HERO_W = 48;
@@ -19,6 +20,8 @@ export type HeroHair = 'none' | 'short' | 'messy' | 'long' | 'ponytail' | 'bun' 
 export type HeroMood = 'idle' | 'happy' | 'sad';
 
 export interface HeroLook {
+  /** Optional so saves made before the body selector keep their original appearance choice. */
+  body?: import('./heroRig').HeroBody;
   skin: string;
   hair: string;
   hairStyle: HeroHair;
@@ -615,6 +618,19 @@ export function renderHero(look: HeroLook, outfit: Outfit, opts: HeroOptions = {
   drawHands(cv, look.skin, outfit);
   if (outfit.main?.kind === 'lute') drawMain(cv, outfit.main);
   if (outfit.off && ['shield', 'buckler', 'book'].includes(outfit.off.kind)) drawOff(cv, outfit.off);
+  // Apply the same body fit while generated layers are loading. Head/hand anchors stay fixed.
+  if (look.body === 'female') {
+    const width = HERO_W * HERO_SCALE;
+    const source = cv.px.slice();
+    for (let y = 0; y < HERO_H * HERO_SCALE; y++) {
+      const fit = bodyWidthAt(look.body, y / HERO_SCALE);
+      if (fit === 1) continue;
+      for (let x = 0; x < width; x++) {
+        const sx = Math.round((x - width / 2) / fit + width / 2);
+        cv.px[y * width + x] = sx >= 0 && sx < width ? source[y * width + sx] : null;
+      }
+    }
+  }
   return cv.px;
 }
 
